@@ -10,7 +10,7 @@ This project is a long-document NLP classification workbench. The longer-term go
 
 ## Current Milestone
 
-Milestone 4 keeps the modeling intentionally modest while making the project structurally ready for long-document experiments.
+Milestone 5 keeps the modeling intentionally modest while comparing several long-document strategies.
 
 The project now supports:
 
@@ -21,8 +21,10 @@ The project now supports:
 - TF-IDF + Logistic Regression baselines for both datasets
 - naive truncated transformer baselines
 - chunked transformer baselines with document-level aggregation
+- summary-first classifier baselines
+- unified report comparison
 
-It still does not include summarization, long-context transformers, APIs, dashboards, or monitoring.
+It still does not include long-context transformers, APIs, dashboards, or monitoring.
 
 ## Setup
 
@@ -155,10 +157,46 @@ The chunked transformer reports are saved as:
 - `reports/chunked_transformer_{dataset_name}.md`
 - `reports/chunked_transformer_{dataset_name}_metrics.json`
 
+## Summary-First Classifier Baseline
+
+Summarization is a compression strategy for long documents: generate a shorter text first, then classify the compressed text. This differs from truncation because the classifier sees a generated summary rather than only the raw prefix. It can still fail because the summarizer itself has an input limit, may only see the first part of a long document, and may remove details that are important for classification.
+
+Summary generation is cached under `data/processed/summaries/`. The cache key includes dataset, split, summarizer model, sample size, max input tokens, and generation settings. A matching cache is reused automatically unless `--force-regenerate-summaries` is passed.
+
+Smoke run for arXiv:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset arxiv --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 1024 --summary-max-new-tokens 120 --summary-min-new-tokens 30 --summary-num-beams 2 --classifier tfidf
+```
+
+Optional AG News smoke run:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset ag_news --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 512 --summary-max-new-tokens 80 --summary-min-new-tokens 20 --summary-num-beams 2 --classifier tfidf
+```
+
+The summary classifier reports are saved as:
+
+- `reports/summary_classifier_{dataset_name}.md`
+- `reports/summary_classifier_{dataset_name}_metrics.json`
+
+## Compare Reports
+
+Build a unified comparison from whatever metrics files are available:
+
+```bash
+python -m longdoc_transformer_classifier.training.compare_reports
+```
+
+The comparison outputs are:
+
+- `reports/model_comparison.md`
+- `reports/model_comparison.json`
+
 ## What This Baseline Proves
 
-The first four milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train classical, truncated-transformer, and chunked-transformer baselines, compute comparable document-level metrics, chunk long documents, and save reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
+The first five milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train classical, truncated-transformer, chunked-transformer, and summary-first baselines, compute comparable document-level metrics, chunk long documents, cache generated summaries, and save comparison reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
 
 ## What Comes Next
 
-Next milestones can add summarization-first classification and eventually long-context transformer baselines. Each should reuse the same data, chunking, metrics, and reporting foundations where possible.
+Next milestones can add stronger summary models, better chunk selection, and eventually long-context transformer baselines. Each should reuse the same data, chunking, metrics, and reporting foundations where possible.

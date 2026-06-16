@@ -1,4 +1,4 @@
-.PHONY: install test lint check baseline analyze-ag-news analyze-longdoc baseline-ag-news baseline-longdoc truncated-ag-news truncated-arxiv chunked-ag-news chunked-arxiv
+.PHONY: install test lint check baseline analyze-ag-news analyze-longdoc baseline-ag-news baseline-longdoc truncated-ag-news truncated-arxiv chunked-ag-news chunked-arxiv summary-arxiv summary-ag-news compare-reports
 
 LONGDOC_DATASET ?= arxiv
 
@@ -38,3 +38,12 @@ chunked-ag-news:
 
 chunked-arxiv:
 	python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 256 --chunk-size 220 --chunk-overlap 40 --max-chunks-per-doc 8 --aggregation mean_proba
+
+summary-arxiv:
+	python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset arxiv --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 1024 --summary-max-new-tokens 120 --summary-min-new-tokens 30 --summary-num-beams 2 --classifier tfidf
+
+summary-ag-news:
+	python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset ag_news --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 512 --summary-max-new-tokens 80 --summary-min-new-tokens 20 --summary-num-beams 2 --classifier tfidf
+
+compare-reports:
+	python -m longdoc_transformer_classifier.training.compare_reports
