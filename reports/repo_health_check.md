@@ -33,4 +33,5 @@ ruff check .
 pytest -q
 python -m longdoc_transformer_classifier.training.compare_reports
 python -m longdoc_transformer_classifier.training.plot_comparison
+make release-check
 ```

@@ -1,5 +1,8 @@
 # LongDoc Transformer Classifier
 
+[![CI](https://github.com/AkshajKashyap/longdoc-transformer-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/AkshajKashyap/longdoc-transformer-classifier/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
+
 Reproducible benchmark for long-document classification across lexical, truncation, chunking,
 summarization, and long-context transformer strategies.
 
@@ -25,12 +28,13 @@ This repo is an honest benchmark project, not a production app and not a state-o
 
 ## Headline Results
 
-Current quick reports show TF-IDF as the strongest baseline under constrained training.
+Current reports show TF-IDF as the strongest baseline under constrained training.
 
-| Dataset | Current Best | Why It Matters |
-| --- | --- | --- |
-| `ag_news` | TF-IDF baseline | Fast smoke check for the pipeline |
-| `arxiv` | TF-IDF baseline / sweep | Full-document lexical signals remain very strong |
+| Dataset | Current Best | Accuracy | Macro-F1 |
+| --- | --- | ---: | ---: |
+| `ag_news` | TF-IDF baseline | 0.7400 | 0.7376 |
+| `arxiv` | Stronger TF-IDF baseline | 0.8340 | 0.8320 |
+| `arxiv` | TF-IDF sweep best | 0.8180 | 0.8155 |
 
 Transformer scores in this repo are smoke scores. Tiny/frozen runs validate infrastructure and expose
 tradeoffs; they are not final model rankings.
@@ -63,6 +67,13 @@ make summary-arxiv
 ```
 
 Large model and dataset downloads are opt-in and cached locally under ignored directories.
+
+## What To Look At First
+
+- `reports/project_summary.md`
+- `reports/model_comparison.md`
+- `docs/interview_notes.md`
+- `docs/reproducibility.md`
 
 ## Reports And Docs
 

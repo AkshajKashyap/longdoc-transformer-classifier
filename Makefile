@@ -1,4 +1,4 @@
-.PHONY: install test lint check baseline analyze-ag-news analyze-longdoc baseline-ag-news baseline-longdoc truncated-ag-news truncated-arxiv chunked-ag-news chunked-arxiv chunked-arxiv-uniform chunked-arxiv-idf long-context-arxiv long-context-ag-news summary-arxiv summary-ag-news compare-reports benchmark-quick benchmark-transformers benchmark-full-smoke plots sweep-arxiv final-reports health-check
+.PHONY: install test lint check baseline analyze-ag-news analyze-longdoc baseline-ag-news baseline-longdoc truncated-ag-news truncated-arxiv chunked-ag-news chunked-arxiv chunked-arxiv-uniform chunked-arxiv-idf long-context-arxiv long-context-ag-news summary-arxiv summary-ag-news compare-reports benchmark-quick benchmark-transformers benchmark-full-smoke plots sweep-arxiv final-reports health-check release-check
 
 LONGDOC_DATASET ?= arxiv
 
@@ -80,3 +80,9 @@ final-reports: compare-reports plots
 
 health-check:
 	python -m longdoc_transformer_classifier.training.write_final_reports
+
+release-check:
+	ruff check .
+	pytest -q
+	python -m longdoc_transformer_classifier.training.compare_reports
+	python -m longdoc_transformer_classifier.training.plot_comparison

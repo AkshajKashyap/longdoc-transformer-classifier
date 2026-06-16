@@ -173,6 +173,7 @@ def build_repo_health_check() -> str:
             "pytest -q",
             "python -m longdoc_transformer_classifier.training.compare_reports",
             "python -m longdoc_transformer_classifier.training.plot_comparison",
+            "make release-check",
             "```",
             "",
         ]
@@ -197,4 +198,3 @@ def _format_best_results(comparison: dict[str, Any]) -> str:
             f"and accuracy {row['accuracy']:.4f}."
         )
     return "\n".join(lines)
-
