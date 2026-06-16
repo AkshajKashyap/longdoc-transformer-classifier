@@ -10,7 +10,7 @@ This project is a long-document NLP classification workbench. The longer-term go
 
 ## Current Milestone
 
-Milestone 2 keeps the modeling intentionally modest while making the project structurally ready for long-document experiments.
+Milestone 4 keeps the modeling intentionally modest while making the project structurally ready for long-document experiments.
 
 The project now supports:
 
@@ -19,8 +19,10 @@ The project now supports:
 - document length analysis with rough 512-token BERT truncation checks
 - fixed-size overlapping word chunking utilities
 - TF-IDF + Logistic Regression baselines for both datasets
+- naive truncated transformer baselines
+- chunked transformer baselines with document-level aggregation
 
-It still does not include transformer training, summarization, APIs, dashboards, or monitoring.
+It still does not include summarization, long-context transformers, APIs, dashboards, or monitoring.
 
 ## Setup
 
@@ -122,10 +124,41 @@ The truncated transformer reports are saved as:
 - `reports/truncated_transformer_{dataset_name}.md`
 - `reports/truncated_transformer_{dataset_name}_metrics.json`
 
+## Chunked Transformer Baseline
+
+Truncation is naive because a standard transformer sees only the first `max_length` tokens. For arXiv papers, that often means the model never sees most of the document.
+
+The chunked baseline is structurally better for long documents: it splits each document into overlapping word chunks, trains a transformer classifier on those chunks, then aggregates chunk predictions back to one document-level prediction. This differs from summarization because it does not rewrite or compress the document, and it differs from Longformer/BigBird because it still uses a regular fixed-window encoder.
+
+Chunk labels are imperfect: every chunk inherits the parent document label, even if that chunk does not contain the evidence for the label. The report calls this out explicitly and computes metrics only at the document level.
+
+Supported aggregation strategies:
+
+- `mean_proba`: average class probabilities across chunks
+- `max_proba`: use the most confident chunk's probability distribution
+- `majority_vote`: vote over chunk-level predicted classes
+
+Smoke run for AG News:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset ag_news --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 128 --chunk-size 100 --chunk-overlap 20 --max-chunks-per-doc 4 --aggregation mean_proba
+```
+
+Smoke run for arXiv:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 256 --chunk-size 220 --chunk-overlap 40 --max-chunks-per-doc 8 --aggregation mean_proba
+```
+
+The chunked transformer reports are saved as:
+
+- `reports/chunked_transformer_{dataset_name}.md`
+- `reports/chunked_transformer_{dataset_name}_metrics.json`
+
 ## What This Baseline Proves
 
-The first three milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train classical and truncated-transformer baselines, compute comparable metrics, chunk long documents, and save reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
+The first four milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train classical, truncated-transformer, and chunked-transformer baselines, compute comparable document-level metrics, chunk long documents, and save reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
 
 ## What Comes Next
 
-Next milestones can add a truncated transformer baseline, chunked transformer classification, summarization-first classification, and eventually long-context transformer baselines. Each should reuse the same data, chunking, metrics, and reporting foundations where possible.
+Next milestones can add summarization-first classification and eventually long-context transformer baselines. Each should reuse the same data, chunking, metrics, and reporting foundations where possible.
