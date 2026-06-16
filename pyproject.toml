@@ -1,0 +1,34 @@
+[project]
+name = "longdoc-transformer-classifier"
+version = "0.1.0"
+description = "Long-document NLP classification with transformer baselines, summarization, evidence chunks, reports, API, and monitoring."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "torch",
+    "transformers",
+    "datasets",
+    "evaluate",
+    "accelerate",
+    "fastapi",
+    "uvicorn",
+    "streamlit",
+    "pydantic",
+    "python-dotenv",
+    "tqdm",
+    "matplotlib"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff"
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
