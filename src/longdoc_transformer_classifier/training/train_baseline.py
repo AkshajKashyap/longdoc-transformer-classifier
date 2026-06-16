@@ -18,7 +18,8 @@ from longdoc_transformer_classifier.models.baseline import predict, train
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train the AG News TF-IDF baseline.")
+    parser = argparse.ArgumentParser(description="Train a TF-IDF + Logistic Regression baseline.")
+    parser.add_argument("--dataset", default="ag_news")
     parser.add_argument("--max-train-samples", type=int, default=5_000)
     parser.add_argument("--max-test-samples", type=int, default=1_000)
     parser.add_argument("--max-features", type=int, default=50_000)
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
 def run(args: argparse.Namespace) -> dict[str, Any]:
     ngram_range = _parse_ngram_range(args.ngram_min, args.ngram_max)
     dataset_config = DatasetConfig(
+        name=args.dataset,
         max_train_samples=args.max_train_samples,
         max_test_samples=args.max_test_samples,
     )
@@ -60,14 +62,30 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         predictions,
         label_names=dataset.label_names,
     )
+    metrics_with_metadata = {
+        "dataset_name": dataset.dataset_name,
+        "hf_path": dataset.hf_path,
+        "text_field": dataset.text_field,
+        "label_field": dataset.label_field,
+        "train_size": len(dataset.train_texts),
+        "test_size": len(dataset.test_texts),
+        **metrics,
+    }
 
     report_config.reports_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = report_config.reports_dir / report_config.metrics_filename
-    report_path = report_config.reports_dir / report_config.markdown_filename
-    metrics_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    metrics_path = report_config.reports_dir / f"baseline_{dataset.dataset_name}_metrics.json"
+    report_path = report_config.reports_dir / f"baseline_{dataset.dataset_name}.md"
+    metrics_path.write_text(
+        json.dumps(metrics_with_metadata, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     report_path.write_text(
         _build_markdown_report(
-            metrics=metrics,
+            metrics=metrics_with_metadata,
+            dataset_name=dataset.dataset_name,
+            hf_path=dataset.hf_path,
+            text_field=dataset.text_field,
+            label_field=dataset.label_field,
             train_size=len(dataset.train_texts),
             test_size=len(dataset.test_texts),
             max_features=feature_config.max_features,
@@ -77,11 +95,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         encoding="utf-8",
     )
 
-    return metrics
+    return metrics_with_metadata
 
 
 def print_metrics(metrics: dict[str, Any]) -> None:
-    print("TF-IDF + Logistic Regression baseline on AG News")
+    print(f"TF-IDF + Logistic Regression baseline on {metrics['dataset_name']}")
     print(f"Accuracy:  {metrics['accuracy']:.4f}")
     print(f"Macro-F1:  {metrics['macro_f1']:.4f}")
     print("Per-class F1:")
@@ -101,6 +119,10 @@ def _parse_ngram_range(ngram_min: int, ngram_max: int) -> tuple[int, int]:
 
 def _build_markdown_report(
     metrics: dict[str, Any],
+    dataset_name: str,
+    hf_path: str,
+    text_field: str,
+    label_field: str,
     train_size: int,
     test_size: int,
     max_features: int,
@@ -108,11 +130,18 @@ def _build_markdown_report(
     random_state: int,
 ) -> str:
     lines = [
-        "# AG News Baseline Report",
+        f"# {dataset_name} Baseline Report",
         "",
         "## Model",
         "",
         "TF-IDF features with Logistic Regression.",
+        "",
+        "## Dataset",
+        "",
+        f"- Dataset name: `{dataset_name}`",
+        f"- Hugging Face dataset: `{hf_path}`",
+        f"- Text field: `{text_field}`",
+        f"- Label field: `{label_field}`",
         "",
         "## Configuration",
         "",

@@ -9,10 +9,11 @@ DEFAULT_RANDOM_STATE = 42
 @dataclass(frozen=True)
 class DatasetConfig:
     name: str = "ag_news"
-    text_column: str = "text"
-    label_column: str = "label"
     max_train_samples: int | None = None
     max_test_samples: int | None = None
+    cache_dir: Path = Path("data/hf_cache")
+    text_field: str | None = None
+    label_field: str | None = None
 
 
 @dataclass(frozen=True)
@@ -31,5 +32,3 @@ class BaselineModelConfig:
 @dataclass(frozen=True)
 class ReportConfig:
     reports_dir: Path = Path("reports")
-    markdown_filename: str = "baseline_ag_news.md"
-    metrics_filename: str = "baseline_ag_news_metrics.json"

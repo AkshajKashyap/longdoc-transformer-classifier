@@ -10,9 +10,17 @@ This project is a long-document NLP classification workbench. The longer-term go
 
 ## Current Milestone
 
-Milestone 1 is intentionally modest: a reliable classical baseline pipeline on Hugging Face `ag_news`.
+Milestone 2 keeps the modeling intentionally modest while making the project structurally ready for long-document experiments.
 
-It includes dataset loading, deterministic sample caps, TF-IDF features, Logistic Regression, evaluation metrics, tests, and report generation. It does not include transformer training, summarization, APIs, dashboards, or monitoring yet.
+The project now supports:
+
+- `ag_news`, used as a fast smoke baseline
+- `arxiv`, backed by Hugging Face `ccdv/arxiv-classification`, used as the first real long-document classification dataset
+- document length analysis with rough 512-token BERT truncation checks
+- fixed-size overlapping word chunking utilities
+- TF-IDF + Logistic Regression baselines for both datasets
+
+It still does not include transformer training, summarization, APIs, dashboards, or monitoring.
 
 ## Setup
 
@@ -38,7 +46,7 @@ pytest -q
 ## Train The Baseline
 
 ```bash
-python -m longdoc_transformer_classifier.training.train_baseline --max-train-samples 5000 --max-test-samples 1000
+python -m longdoc_transformer_classifier.training.train_baseline --dataset ag_news --max-train-samples 5000 --max-test-samples 1000
 ```
 
 or:
@@ -47,15 +55,52 @@ or:
 make baseline
 ```
 
-The baseline writes:
+Run the long-document baseline with:
 
-- `reports/baseline_ag_news.md`
-- `reports/baseline_ag_news_metrics.json`
+```bash
+python -m longdoc_transformer_classifier.training.train_baseline --dataset arxiv --max-train-samples 1000 --max-test-samples 500
+```
+
+Baseline reports use dataset-specific filenames:
+
+- `reports/baseline_{dataset_name}.md`
+- `reports/baseline_{dataset_name}_metrics.json`
+
+## Analyze Dataset Lengths
+
+AG News is short and useful for fast pipeline checks:
+
+```bash
+python -m longdoc_transformer_classifier.training.analyze_dataset --dataset ag_news --max-train-samples 1000 --max-test-samples 500
+```
+
+The arXiv dataset is closer to the real project goal because each example is a paper-length scientific document with a subject-area label:
+
+```bash
+python -m longdoc_transformer_classifier.training.analyze_dataset --dataset arxiv --max-train-samples 1000 --max-test-samples 500
+```
+
+Length reports are saved as:
+
+- `reports/{dataset_name}_length_analysis.md`
+- `reports/{dataset_name}_length_analysis.json`
+
+## Why AG News Is Only A Smoke Baseline
+
+`ag_news` downloads quickly, has clean labels, and keeps tests and local smoke runs cheap. It is not a long-document dataset, so it does not answer whether truncation will discard important evidence.
+
+## Why arXiv Is Closer To The Goal
+
+`ccdv/arxiv-classification` provides long scientific documents with classification labels. It lets the project measure document lengths, estimate how often a 512-token transformer input would truncate the document, and prove the same baseline pipeline can run on realistic long texts.
+
+## Why Chunking Matters
+
+Most standard transformer classifiers can only read a fixed-size window. For long documents, a later model will need to split each document into chunks, classify or encode those chunks, and aggregate evidence back to the original document. This milestone adds deterministic word chunking with configurable chunk size and overlap so that later transformer experiments can share one tested chunking foundation.
 
 ## What This Baseline Proves
 
-The first milestone proves that the project can load a text classification dataset, create reproducible features, train a simple classifier, compute comparable metrics, and save reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
+The first two milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train a simple classifier, compute comparable metrics, chunk long documents, and save reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
 
 ## What Comes Next
 
-Next milestones can add a truncated transformer baseline, chunked long-document handling, summarization-first classification, and eventually long-context transformer baselines. Each should reuse the same data, metrics, and reporting foundations where possible.
+Next milestones can add a truncated transformer baseline, chunked transformer classification, summarization-first classification, and eventually long-context transformer baselines. Each should reuse the same data, chunking, metrics, and reporting foundations where possible.

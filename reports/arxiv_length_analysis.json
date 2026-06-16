@@ -1,0 +1,127 @@
+{
+  "bert_whitespace_token_limit": 512,
+  "dataset_name": "arxiv",
+  "hf_path": "ccdv/arxiv-classification",
+  "label_field": "label",
+  "label_names": [
+    "math.AC",
+    "cs.CV",
+    "cs.AI",
+    "cs.SY",
+    "math.GR",
+    "cs.CE",
+    "cs.PL",
+    "cs.IT",
+    "cs.DS",
+    "cs.NE",
+    "math.ST"
+  ],
+  "splits": {
+    "combined": {
+      "character_lengths": {
+        "count": 1500,
+        "max": 2344406,
+        "mean": 56701.394,
+        "median": 45653.0,
+        "min": 4168,
+        "p90": 93878.09999999999,
+        "p95": 118934.04999999999,
+        "p99": 237213.91999999993
+      },
+      "document_count": 1500,
+      "documents_above_bert_limit": 1500,
+      "percent_above_bert_limit": 100.0,
+      "whitespace_token_counts": {
+        "count": 1500,
+        "max": 521384,
+        "mean": 10596.550666666666,
+        "median": 8233.5,
+        "min": 697,
+        "p90": 18254.29999999999,
+        "p95": 23190.89999999999,
+        "p99": 40702.21999999994
+      },
+      "word_counts": {
+        "count": 1500,
+        "max": 521384,
+        "mean": 10596.550666666666,
+        "median": 8233.5,
+        "min": 697,
+        "p90": 18254.29999999999,
+        "p95": 23190.89999999999,
+        "p99": 40702.21999999994
+      }
+    },
+    "test": {
+      "character_lengths": {
+        "count": 500,
+        "max": 395898,
+        "mean": 53778.46,
+        "median": 44694.0,
+        "min": 5863,
+        "p90": 86317.40000000002,
+        "p95": 113638.1,
+        "p99": 195625.00999999954
+      },
+      "document_count": 500,
+      "documents_above_bert_limit": 500,
+      "percent_above_bert_limit": 100.0,
+      "whitespace_token_counts": {
+        "count": 500,
+        "max": 71155,
+        "mean": 9973.052,
+        "median": 8184.0,
+        "min": 1009,
+        "p90": 17103.4,
+        "p95": 21094.250000000007,
+        "p99": 36431.769999999975
+      },
+      "word_counts": {
+        "count": 500,
+        "max": 71155,
+        "mean": 9973.052,
+        "median": 8184.0,
+        "min": 1009,
+        "p90": 17103.4,
+        "p95": 21094.250000000007,
+        "p99": 36431.769999999975
+      }
+    },
+    "train": {
+      "character_lengths": {
+        "count": 1000,
+        "max": 2344406,
+        "mean": 58162.861,
+        "median": 46038.0,
+        "min": 4168,
+        "p90": 95935.5,
+        "p95": 120421.9,
+        "p99": 237276.86999999988
+      },
+      "document_count": 1000,
+      "documents_above_bert_limit": 1000,
+      "percent_above_bert_limit": 100.0,
+      "whitespace_token_counts": {
+        "count": 1000,
+        "max": 521384,
+        "mean": 10908.3,
+        "median": 8257.0,
+        "min": 697,
+        "p90": 19200.100000000002,
+        "p95": 24305.649999999998,
+        "p99": 46838.88999999997
+      },
+      "word_counts": {
+        "count": 1000,
+        "max": 521384,
+        "mean": 10908.3,
+        "median": 8257.0,
+        "min": 697,
+        "p90": 19200.100000000002,
+        "p95": 24305.649999999998,
+        "p99": 46838.88999999997
+      }
+    }
+  },
+  "text_field": "text"
+}

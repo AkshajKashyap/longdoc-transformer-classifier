@@ -1,31 +1,34 @@
 {
-  "accuracy": 0.725,
+  "accuracy": 0.74,
   "confusion_matrix": [
     [
-      34,
-      6,
-      4,
-      6
+      93,
+      14,
+      8,
+      10
     ],
     [
       1,
-      43,
+      117,
       0,
-      6
-    ],
-    [
-      4,
-      2,
-      37,
       7
     ],
     [
-      2,
-      2,
-      15,
-      31
+      13,
+      3,
+      84,
+      25
+    ],
+    [
+      3,
+      11,
+      35,
+      76
     ]
   ],
+  "dataset_name": "ag_news",
+  "hf_path": "fancyzhx/ag_news",
+  "label_field": "label",
   "label_names": [
     "World",
     "Sports",
@@ -38,11 +41,14 @@
     2,
     3
   ],
-  "macro_f1": 0.7250793527776492,
+  "macro_f1": 0.7375842745819106,
   "per_class_f1": {
-    "Business": 0.6981132075471698,
-    "Sci/Tech": 0.62,
-    "Sports": 0.8349514563106796,
-    "World": 0.7472527472527473
-  }
+    "Business": 0.6666666666666666,
+    "Sci/Tech": 0.6255144032921811,
+    "Sports": 0.8666666666666667,
+    "World": 0.7914893617021277
+  },
+  "test_size": 500,
+  "text_field": "text",
+  "train_size": 1000
 }

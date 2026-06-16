@@ -1,0 +1,120 @@
+{
+  "bert_whitespace_token_limit": 512,
+  "dataset_name": "ag_news",
+  "hf_path": "fancyzhx/ag_news",
+  "label_field": "label",
+  "label_names": [
+    "World",
+    "Sports",
+    "Business",
+    "Sci/Tech"
+  ],
+  "splits": {
+    "combined": {
+      "character_lengths": {
+        "count": 1500,
+        "max": 959,
+        "mean": 252.512,
+        "median": 245.5,
+        "min": 100,
+        "p90": 355.0,
+        "p95": 416.14999999999986,
+        "p99": 728.02
+      },
+      "document_count": 1500,
+      "documents_above_bert_limit": 0,
+      "percent_above_bert_limit": 0.0,
+      "whitespace_token_counts": {
+        "count": 1500,
+        "max": 136,
+        "mean": 40.458666666666666,
+        "median": 39.0,
+        "min": 11,
+        "p90": 56.0,
+        "p95": 67.0,
+        "p99": 107.00999999999999
+      },
+      "word_counts": {
+        "count": 1500,
+        "max": 136,
+        "mean": 40.458666666666666,
+        "median": 39.0,
+        "min": 11,
+        "p90": 56.0,
+        "p95": 67.0,
+        "p99": 107.00999999999999
+      }
+    },
+    "test": {
+      "character_lengths": {
+        "count": 500,
+        "max": 844,
+        "mean": 247.356,
+        "median": 243.0,
+        "min": 101,
+        "p90": 330.1,
+        "p95": 382.0,
+        "p99": 485.3399999999997
+      },
+      "document_count": 500,
+      "documents_above_bert_limit": 0,
+      "percent_above_bert_limit": 0.0,
+      "whitespace_token_counts": {
+        "count": 500,
+        "max": 136,
+        "mean": 39.626,
+        "median": 39.0,
+        "min": 14,
+        "p90": 52.0,
+        "p95": 60.0,
+        "p99": 81.03999999999996
+      },
+      "word_counts": {
+        "count": 500,
+        "max": 136,
+        "mean": 39.626,
+        "median": 39.0,
+        "min": 14,
+        "p90": 52.0,
+        "p95": 60.0,
+        "p99": 81.03999999999996
+      }
+    },
+    "train": {
+      "character_lengths": {
+        "count": 1000,
+        "max": 959,
+        "mean": 255.09,
+        "median": 247.0,
+        "min": 100,
+        "p90": 375.0,
+        "p95": 430.04999999999995,
+        "p99": 730.0
+      },
+      "document_count": 1000,
+      "documents_above_bert_limit": 0,
+      "percent_above_bert_limit": 0.0,
+      "whitespace_token_counts": {
+        "count": 1000,
+        "max": 134,
+        "mean": 40.875,
+        "median": 39.0,
+        "min": 11,
+        "p90": 58.0,
+        "p95": 69.0,
+        "p99": 114.00999999999999
+      },
+      "word_counts": {
+        "count": 1000,
+        "max": 134,
+        "mean": 40.875,
+        "median": 39.0,
+        "min": 11,
+        "p90": 58.0,
+        "p95": 69.0,
+        "p99": 114.00999999999999
+      }
+    }
+  },
+  "text_field": "text"
+}
