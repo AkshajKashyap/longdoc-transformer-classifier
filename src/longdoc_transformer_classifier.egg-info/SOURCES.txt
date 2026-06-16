@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-src/longdoc_transformer_classifier/__init__.py
-src/longdoc_transformer_classifier.egg-info/PKG-INFO
-src/longdoc_transformer_classifier.egg-info/SOURCES.txt
-src/longdoc_transformer_classifier.egg-info/dependency_links.txt
-src/longdoc_transformer_classifier.egg-info/requires.txt
-src/longdoc_transformer_classifier.egg-info/top_level.txt
-tests/test_smoke.py
