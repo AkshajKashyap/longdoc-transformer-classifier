@@ -8,12 +8,14 @@ from pathlib import Path
 
 from longdoc_transformer_classifier.benchmark_config import (
     DEFAULT_BENCHMARK_DATASET,
+    DEFAULT_CHUNK_SELECTION,
     DEFAULT_REPORTS_DIR,
     QUICK_SAMPLE_CONFIG,
     STANDARD_SAMPLE_CONFIG,
     TINY_TRANSFORMER_MODEL,
     BenchmarkSampleConfig,
 )
+from longdoc_transformer_classifier.chunk_selection import CHUNK_SELECTION_STRATEGIES
 
 
 @dataclass(frozen=True)
@@ -33,6 +35,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--include-transformers", action="store_true")
     parser.add_argument("--include-summary", action="store_true")
+    parser.add_argument(
+        "--chunk-selection",
+        choices=sorted(CHUNK_SELECTION_STRATEGIES),
+        default=DEFAULT_CHUNK_SELECTION,
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_REPORTS_DIR)
     return parser.parse_args(argv)
 
@@ -45,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         include_transformers=args.include_transformers,
         include_summary=args.include_summary,
         output_dir=args.output_dir,
+        chunk_selection=args.chunk_selection,
     )
     return run_command_plan(commands)
 
@@ -55,6 +63,7 @@ def build_command_plan(
     include_transformers: bool,
     include_summary: bool,
     output_dir: Path,
+    chunk_selection: str = DEFAULT_CHUNK_SELECTION,
 ) -> list[BenchmarkCommand]:
     samples = QUICK_SAMPLE_CONFIG if quick else STANDARD_SAMPLE_CONFIG
     output_dir_text = str(output_dir)
@@ -67,7 +76,7 @@ def build_command_plan(
         commands.extend(
             [
                 _truncated_transformer_command(dataset, samples, output_dir_text),
-                _chunked_transformer_command(dataset, samples, output_dir_text),
+                _chunked_transformer_command(dataset, samples, output_dir_text, chunk_selection),
             ]
         )
 
@@ -175,6 +184,7 @@ def _chunked_transformer_command(
     dataset: str,
     samples: BenchmarkSampleConfig,
     output_dir: str,
+    chunk_selection: str,
 ) -> BenchmarkCommand:
     return BenchmarkCommand(
         name="chunked-transformer-smoke",
@@ -202,6 +212,8 @@ def _chunked_transformer_command(
             "8" if dataset == "arxiv" else "4",
             "--aggregation",
             "mean_proba",
+            "--chunk-selection",
+            chunk_selection,
             "--reports-dir",
             output_dir,
         ),

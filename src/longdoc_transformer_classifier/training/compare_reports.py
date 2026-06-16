@@ -202,10 +202,11 @@ def summarize_settings(method_name: str, metrics: dict[str, Any]) -> str:
     if method_name.startswith("chunked_transformer_"):
         return (
             f"model={metrics.get('model_name', 'n/a')}, "
+            f"chunk_selection={metrics.get('chunk_selection', 'first_k')}, "
+            f"aggregation={metrics.get('aggregation', 'n/a')}, "
+            f"max_chunks_per_doc={metrics.get('max_chunks_per_doc', 'n/a')}, "
             f"chunk_size={metrics.get('chunk_size', 'n/a')}, "
-            f"overlap={metrics.get('chunk_overlap', 'n/a')}, "
-            f"cap={metrics.get('max_chunks_per_doc', 'n/a')}, "
-            f"aggregation={metrics.get('aggregation', 'n/a')}"
+            f"overlap={metrics.get('chunk_overlap', 'n/a')}"
         )
     if method_name.startswith("summary_classifier_"):
         classifier_model = metrics.get("classifier_model") or "n/a"

@@ -31,6 +31,12 @@ aggregates chunk predictions back to document-level predictions. It proves the p
 document identity through chunking and evaluate at the correct level, while also exposing the weakness
 of inherited chunk labels.
 
+Chunk selection matters when a document has more chunks than the configured `max_chunks_per_doc` cap.
+The baseline now supports `first_k`, `uniform_k`, `idf_top_k`, and `longest_k`. `first_k` preserves the
+original prefix-only behavior. `uniform_k` spreads selected chunks across the document. `idf_top_k`
+fits a simple IDF scorer on training chunks only and applies that scorer to train and test chunks. These
+strategies are selection heuristics, not learned evidence retrieval.
+
 ## Summary-First Baseline
 
 The summary-first classifier compresses documents before classification. It proves the project can
@@ -43,4 +49,3 @@ fail when the summarizer sees only the front portion of a document or removes la
 - Truncation proves how much evidence a fixed-window transformer discards.
 - Chunking proves the project can structurally process more of each document.
 - Summary-first proves compression can be benchmarked without changing the evaluation contract.
-

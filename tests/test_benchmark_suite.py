@@ -10,6 +10,7 @@ def test_quick_benchmark_plan_skips_expensive_models_by_default():
         include_transformers=False,
         include_summary=False,
         output_dir=Path("reports"),
+        chunk_selection="first_k",
     )
 
     modules = [command.module for command in plan]
@@ -31,6 +32,7 @@ def test_quick_benchmark_plan_includes_optional_transformers_and_summary():
         include_transformers=True,
         include_summary=True,
         output_dir=Path("reports"),
+        chunk_selection="uniform_k",
     )
 
     modules = [command.module for command in plan]
@@ -38,4 +40,5 @@ def test_quick_benchmark_plan_includes_optional_transformers_and_summary():
     assert "longdoc_transformer_classifier.training.train_truncated_transformer" in modules
     assert "longdoc_transformer_classifier.training.train_chunked_transformer" in modules
     assert "longdoc_transformer_classifier.training.train_summary_classifier" in modules
-
+    chunked_command = plan[3]
+    assert chunked_command.args[chunked_command.args.index("--chunk-selection") + 1] == "uniform_k"

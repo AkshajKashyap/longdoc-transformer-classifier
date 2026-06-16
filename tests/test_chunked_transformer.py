@@ -91,15 +91,25 @@ def test_report_writer_includes_chunk_diagnostics(tmp_path):
         chunk_overlap=0,
         max_chunks_per_doc=4,
     )
-    report = _fake_report(build_chunk_diagnostics(train_examples, test_examples, 4, "mean_proba"))
+    report = _fake_report(
+        build_chunk_diagnostics(
+            train_examples,
+            test_examples,
+            4,
+            "mean_proba",
+            chunk_selection="uniform_k",
+        )
+    )
 
     markdown_path, json_path = write_reports(report, tmp_path)
 
     saved = json.loads(json_path.read_text(encoding="utf-8"))
     markdown = markdown_path.read_text(encoding="utf-8")
-    assert saved["chunk_diagnostics"]["train"]["generated_chunks"] == 2
+    assert saved["chunk_diagnostics"]["train"]["total_chunks_after_selection"] == 2
     assert saved["chunk_diagnostics"]["aggregation"] == "mean_proba"
+    assert saved["chunk_selection"] == "uniform_k"
     assert "Chunk Diagnostics" in markdown
+    assert "Chunk selection: `uniform_k`" in markdown
     assert "weak labels inherited from the parent document" in markdown
 
 
@@ -115,6 +125,7 @@ def _fake_report(chunk_diagnostics):
         "max_length": 8,
         "max_chunks_per_doc": 4,
         "aggregation": "mean_proba",
+        "chunk_selection": "uniform_k",
         "max_train_samples": 4,
         "max_test_samples": 2,
         "train_size": 4,
@@ -125,6 +136,8 @@ def _fake_report(chunk_diagnostics):
         "random_state": 42,
         "device": "cpu",
         "limitation_note": "fake limitation note",
+        "limitation": "fake limitation note",
+        "structural_takeaway": "fake structural takeaway",
         "chunk_diagnostics": chunk_diagnostics,
         "accuracy": 0.5,
         "macro_f1": 0.5,

@@ -78,5 +78,27 @@ def test_comparison_parsing_handles_missing_optional_fields(tmp_path):
     assert row["structural_takeaway"]
 
 
+def test_comparison_report_includes_chunk_selection_in_settings(tmp_path):
+    metrics_path = tmp_path / "chunked_transformer_arxiv_metrics.json"
+    _write_metrics(
+        metrics_path,
+        {
+            "dataset_name": "arxiv",
+            "accuracy": 0.4,
+            "macro_f1": 0.3,
+            "model_name": "fake-model",
+            "chunk_selection": "uniform_k",
+            "aggregation": "mean_proba",
+            "max_chunks_per_doc": 8,
+        },
+    )
+
+    row = parse_metrics_file(metrics_path)
+
+    assert "chunk_selection=uniform_k" in row["key_settings"]
+    assert "aggregation=mean_proba" in row["key_settings"]
+    assert "max_chunks_per_doc=8" in row["key_settings"]
+
+
 def _write_metrics(path, metrics):
     path.write_text(json.dumps(metrics), encoding="utf-8")

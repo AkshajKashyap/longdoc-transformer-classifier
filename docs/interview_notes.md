@@ -26,6 +26,13 @@ not to establish final performance.
 Chunked training gives every chunk the parent document label. That is noisy because a chunk may be
 background, methodology, or boilerplate rather than the part that supports the class.
 
+## Why Chunk Selection Matters
+
+If a long document produces many chunks and the pipeline keeps only the first few, the model is still
+mostly doing prefix classification. Uniform selection improves rough document coverage, and IDF top-k
+adds a lexical informativeness heuristic, but neither strategy learns which chunks truly contain
+evidence for the label.
+
 ## Why Summary-First Classification Can Fail
 
 Summarization compresses the document before classification. The summarizer can miss later sections,
@@ -36,4 +43,3 @@ omit rare class evidence, or produce summaries optimized for readability rather 
 With more compute, the next steps would be larger transformer smoke runs, better chunk selection,
 hierarchical aggregation, stronger summarizers, calibration checks, and eventually true long-context
 models such as Longformer or BigBird.
-

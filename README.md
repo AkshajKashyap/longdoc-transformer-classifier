@@ -13,12 +13,16 @@ The longer-term comparison plan is:
 
 ## Current Status
 
-Milestone 6 consolidates the earlier scripts into a small benchmark project with:
+Milestone 7 consolidates the earlier scripts into a small benchmark project and makes the chunked
+transformer baseline less prefix-biased with chunk selection strategies.
+
+The project includes:
 
 - `ag_news` as a fast smoke dataset
 - `arxiv`, backed by Hugging Face `ccdv/arxiv-classification`, as the long-document target
 - document length analysis with rough 512-token truncation checks
 - deterministic word chunking utilities
+- chunk selection strategies for capped chunked transformer runs
 - TF-IDF, truncated transformer, chunked transformer, and summary-first smoke baselines
 - unified comparison reports and matplotlib figures
 - method notes, interview notes, and limitations docs
@@ -132,6 +136,18 @@ Chunked transformer smoke run:
 python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 256 --chunk-size 220 --chunk-overlap 40 --max-chunks-per-doc 8 --aggregation mean_proba
 ```
 
+Uniform chunk selection:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 256 --chunk-size 220 --chunk-overlap 40 --max-chunks-per-doc 8 --aggregation mean_proba --chunk-selection uniform_k
+```
+
+IDF top-k chunk selection:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 256 --chunk-size 220 --chunk-overlap 40 --max-chunks-per-doc 8 --aggregation mean_proba --chunk-selection idf_top_k
+```
+
 Summary-first smoke run:
 
 ```bash
@@ -164,6 +180,30 @@ Most standard transformer classifiers can only read a fixed-size window. For lon
 needs to split each document into chunks, classify or encode those chunks, and aggregate evidence back
 to the original document. This repo keeps chunking deterministic and tested so later transformer
 experiments share the same foundation.
+
+## Chunk Selection Strategies
+
+The original chunked baseline used `first_k`, which selects only the first `max_chunks_per_doc` chunks.
+That is a weak default for very long documents because it may ignore the middle and end entirely.
+
+Supported strategies:
+
+- `first_k`: preserves the original behavior and selects the first chunks.
+- `uniform_k`: selects chunks approximately evenly across the document, improving rough coverage of
+  beginning, middle, and end.
+- `idf_top_k`: fits a lightweight IDF scorer on training chunks only and selects lexically informative
+  chunks at train and test time.
+- `longest_k`: selects the longest chunks as a simple sanity baseline.
+
+These are unsupervised heuristics. They make the capped chunked baseline less naive, but they are not
+learned semantic evidence retrieval.
+
+Practical Make targets:
+
+```bash
+make chunked-arxiv-uniform
+make chunked-arxiv-idf
+```
 
 ## Documentation
 

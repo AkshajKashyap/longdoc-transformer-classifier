@@ -30,3 +30,17 @@ summarizer has its own input limit.
 Fixed word chunking does not know which chunks contain class evidence. It gives structure to the
 pipeline, but it does not solve evidence selection by itself.
 
+## IDF Top-K Is Lexical
+
+IDF top-k ranks chunks by lexical rarity from training chunks. It is not semantic and can overvalue rare
+terms that are not useful evidence for the class.
+
+## Uniform Coverage Can Miss Evidence
+
+Uniform selection improves coverage across a document, but important evidence can still fall between
+selected chunks.
+
+## Chunk Selection Is Unsupervised
+
+The current chunk selection strategies do not learn evidence relevance from labels or model feedback.
+They are heuristics for making capped chunked runs less prefix-biased.

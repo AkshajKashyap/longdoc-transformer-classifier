@@ -6,6 +6,7 @@ from pathlib import Path
 DEFAULT_BENCHMARK_DATASET = "arxiv"
 DEFAULT_REPORTS_DIR = Path("reports")
 TINY_TRANSFORMER_MODEL = "prajjwal1/bert-tiny"
+DEFAULT_CHUNK_SELECTION = "first_k"
 
 
 @dataclass(frozen=True)
@@ -76,4 +77,3 @@ METHOD_STRUCTURAL_TAKEAWAYS = {
     "summary_classifier": "Compresses long documents, but may discard class evidence.",
     "unknown": "Useful only as an unclassified report artifact.",
 }
-

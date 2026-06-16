@@ -12,6 +12,11 @@ import torch
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 
+from longdoc_transformer_classifier.chunk_selection import (
+    CHUNK_SELECTION_STRATEGIES,
+    IDFChunkScorer,
+    select_chunks_by_strategy,
+)
 from longdoc_transformer_classifier.chunking import DocumentChunk, chunk_documents
 from longdoc_transformer_classifier.config import DatasetConfig
 from longdoc_transformer_classifier.data import load_text_classification_dataset
@@ -36,8 +41,17 @@ class ChunkedDocumentExamples:
     chunk_texts: list[str]
     chunk_labels: list[int]
     document_ids: list[int]
-    chunks_per_document_before_cap: list[int]
-    chunks_per_document_after_cap: list[int]
+    chunks_per_document_before_selection: list[int]
+    chunks_per_document_after_selection: list[int]
+    selected_document_coverage: list[float]
+
+    @property
+    def chunks_per_document_before_cap(self) -> list[int]:
+        return self.chunks_per_document_before_selection
+
+    @property
+    def chunks_per_document_after_cap(self) -> list[int]:
+        return self.chunks_per_document_after_selection
 
 
 class ChunkedTextDataset(Dataset):
@@ -82,6 +96,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--chunk-overlap", type=int, default=40)
     parser.add_argument("--max-chunks-per-doc", type=int, default=8)
     parser.add_argument("--aggregation", choices=sorted(SUPPORTED_AGGREGATIONS), default="mean_proba")
+    parser.add_argument(
+        "--chunk-selection",
+        choices=sorted(CHUNK_SELECTION_STRATEGIES),
+        default="first_k",
+    )
     parser.add_argument("--learning-rate", type=float, default=5e-5)
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--reports-dir", type=Path, default=Path("reports"))
@@ -108,12 +127,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             max_test_samples=args.max_test_samples,
         )
     )
+    idf_scorer = build_idf_scorer(
+        dataset.train_texts,
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
+        chunk_selection=args.chunk_selection,
+    )
     train_chunks = expand_documents_to_chunks(
         dataset.train_texts,
         dataset.train_labels,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
         max_chunks_per_doc=args.max_chunks_per_doc,
+        chunk_selection=args.chunk_selection,
+        idf_scorer=idf_scorer,
     )
     test_chunks = expand_documents_to_chunks(
         dataset.test_texts,
@@ -121,6 +148,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
         max_chunks_per_doc=args.max_chunks_per_doc,
+        chunk_selection=args.chunk_selection,
+        idf_scorer=idf_scorer,
     )
 
     tokenizer = load_tokenizer(args.model_name, cache_dir=str(args.model_cache_dir))
@@ -174,13 +203,19 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         test_chunks,
         max_chunks_per_doc=args.max_chunks_per_doc,
         aggregation=args.aggregation,
+        chunk_selection=args.chunk_selection,
+        idf_scorer_metadata=idf_scorer.metadata() if idf_scorer else None,
     )
     report_path = args.reports_dir / f"chunked_transformer_{dataset.dataset_name}.md"
     limitations = [
         "Chunks inherit weak document labels and may lack class evidence.",
         "Aggregation is document-level, but chunk supervision is noisy.",
+        "Chunk selection is unsupervised and does not learn evidence relevance.",
     ]
+    method = f"chunked_transformer_{dataset.dataset_name}"
     report = {
+        "method": method,
+        "dataset": dataset.dataset_name,
         "dataset_name": dataset.dataset_name,
         "hf_path": dataset.hf_path,
         "text_field": dataset.text_field,
@@ -191,6 +226,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "max_length": args.max_length,
         "max_chunks_per_doc": args.max_chunks_per_doc,
         "aggregation": args.aggregation,
+        "chunk_selection": args.chunk_selection,
         "max_train_samples": args.max_train_samples,
         "max_test_samples": args.max_test_samples,
         "train_size": len(dataset.train_texts),
@@ -211,10 +247,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "macro_f1": metrics["macro_f1"],
             "report_path": str(report_path),
             "limitations": limitations,
+            "chunk_selection": args.chunk_selection,
         },
+        "limitation": limitations[0],
         "limitation_note": (
             "Chunk labels are weak labels inherited from the parent document; not every chunk "
             "necessarily contains evidence for the document label."
+        ),
+        "structural_takeaway": (
+            "Chunk selection lets the fixed-window model inspect selected regions beyond "
+            "the document prefix, but selection remains a heuristic."
         ),
         "chunk_diagnostics": diagnostics,
         **metrics,
@@ -229,6 +271,8 @@ def expand_documents_to_chunks(
     chunk_size: int,
     chunk_overlap: int,
     max_chunks_per_doc: int,
+    chunk_selection: str = "first_k",
+    idf_scorer: IDFChunkScorer | None = None,
 ) -> ChunkedDocumentExamples:
     if len(texts) != len(labels):
         msg = "texts and labels must have the same length."
@@ -250,8 +294,9 @@ def expand_documents_to_chunks(
     chunk_texts: list[str] = []
     chunk_labels: list[int] = []
     document_ids: list[int] = []
-    chunks_before_cap: list[int] = []
-    chunks_after_cap: list[int] = []
+    chunks_before_selection: list[int] = []
+    chunks_after_selection: list[int] = []
+    selected_document_coverage: list[float] = []
 
     for document_id, (text, label) in enumerate(zip(texts, labels, strict=True)):
         document_chunks = chunks_by_document.get(document_id)
@@ -260,11 +305,19 @@ def expand_documents_to_chunks(
                 DocumentChunk(document_id=document_id, chunk_id=0, text="", start_word=0, end_word=0)
             ]
 
-        chunks_before_cap.append(len(document_chunks))
-        capped_chunks = document_chunks[:max_chunks_per_doc]
-        chunks_after_cap.append(len(capped_chunks))
+        chunks_before_selection.append(len(document_chunks))
+        selected_chunks = select_chunks_by_strategy(
+            document_chunks,
+            max_chunks=max_chunks_per_doc,
+            strategy=chunk_selection,
+            idf_scorer=idf_scorer,
+        )
+        chunks_after_selection.append(len(selected_chunks))
+        selected_document_coverage.append(
+            _estimate_selected_coverage(selected_chunks, total_words=len(text.split()))
+        )
 
-        for chunk in capped_chunks:
+        for chunk in selected_chunks:
             chunk_texts.append(chunk.text)
             chunk_labels.append(int(label))
             document_ids.append(document_id)
@@ -273,9 +326,27 @@ def expand_documents_to_chunks(
         chunk_texts=chunk_texts,
         chunk_labels=chunk_labels,
         document_ids=document_ids,
-        chunks_per_document_before_cap=chunks_before_cap,
-        chunks_per_document_after_cap=chunks_after_cap,
+        chunks_per_document_before_selection=chunks_before_selection,
+        chunks_per_document_after_selection=chunks_after_selection,
+        selected_document_coverage=selected_document_coverage,
     )
+
+
+def build_idf_scorer(
+    texts: Sequence[str],
+    chunk_size: int,
+    chunk_overlap: int,
+    chunk_selection: str,
+) -> IDFChunkScorer | None:
+    if chunk_selection != "idf_top_k":
+        return None
+    training_chunks = chunk_documents(
+        texts,
+        chunk_size=chunk_size,
+        overlap=chunk_overlap,
+        document_ids=list(range(len(texts))),
+    )
+    return IDFChunkScorer.fit(training_chunks)
 
 
 def predict_chunk_probabilities(
@@ -353,13 +424,20 @@ def build_chunk_diagnostics(
     test_chunks: ChunkedDocumentExamples,
     max_chunks_per_doc: int,
     aggregation: str,
+    chunk_selection: str = "first_k",
+    idf_scorer_metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    diagnostics = {
         "train": _summarize_chunk_split(train_chunks, max_chunks_per_doc),
         "test": _summarize_chunk_split(test_chunks, max_chunks_per_doc),
         "max_chunks_per_doc": max_chunks_per_doc,
         "aggregation": aggregation,
+        "chunk_selection": chunk_selection,
+        "selection_note": _selection_note(chunk_selection),
     }
+    if idf_scorer_metadata is not None:
+        diagnostics["idf_scorer"] = idf_scorer_metadata
+    return diagnostics
 
 
 def write_reports(report: dict[str, Any], reports_dir: Path) -> tuple[Path, Path]:
@@ -397,6 +475,7 @@ def build_markdown_report(report: dict[str, Any]) -> str:
         f"- Max length: {report['max_length']}",
         f"- Max chunks per document: {report['max_chunks_per_doc']}",
         f"- Aggregation: `{report['aggregation']}`",
+        f"- Chunk selection: `{report['chunk_selection']}`",
         f"- Max train samples: {report['max_train_samples']}",
         f"- Max test samples: {report['max_test_samples']}",
         f"- Actual train size: {report['train_size']}",
@@ -408,21 +487,41 @@ def build_markdown_report(report: dict[str, Any]) -> str:
         "",
         "## Chunk Diagnostics",
         "",
-        "| Split | Documents | Chunks | Avg Chunks/Doc | Max Before Cap | >1 Chunk | Hit Cap |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        f"- Selection note: {diagnostics['selection_note']}",
+        "",
+        "| Split | Documents | Chunks Before | Chunks After | Avg Before | Avg After | "
+        "Retained | Docs Capped | Avg Coverage |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         _format_chunk_diagnostic_row("train", train_diagnostics),
         _format_chunk_diagnostic_row("test", test_diagnostics),
         "",
-        "## Document-Level Metrics",
-        "",
-        f"- Accuracy: {report['accuracy']:.4f}",
-        f"- Macro-F1: {report['macro_f1']:.4f}",
-        "",
-        "## Per-Class F1",
-        "",
-        "| Class | F1 |",
-        "| --- | ---: |",
     ]
+    if "idf_scorer" in diagnostics:
+        idf_metadata = diagnostics["idf_scorer"]
+        lines.extend(
+            [
+                "## IDF Scorer",
+                "",
+                f"- Vocabulary size: {idf_metadata['vocabulary_size']}",
+                f"- Scoring mode: `{idf_metadata['scoring_mode']}`",
+                f"- Fitted on chunks: {idf_metadata['fitted_on_num_chunks']}",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "## Document-Level Metrics",
+            "",
+            f"- Accuracy: {report['accuracy']:.4f}",
+            f"- Macro-F1: {report['macro_f1']:.4f}",
+            "",
+            "## Per-Class F1",
+            "",
+            "| Class | F1 |",
+            "| --- | ---: |",
+        ]
+    )
     for label_name, score in report["per_class_f1"].items():
         lines.append(f"| {label_name} | {score:.4f} |")
 
@@ -444,8 +543,9 @@ def print_summary(report: dict[str, Any]) -> None:
     print(f"Model:      {report['model_name']}")
     print(f"Device:     {report['device']}")
     print(f"Aggregation:{report['aggregation']}")
-    print(f"Train chunks: {diagnostics['train']['generated_chunks']}")
-    print(f"Test chunks:  {diagnostics['test']['generated_chunks']}")
+    print(f"Selection:  {report['chunk_selection']}")
+    print(f"Train chunks: {diagnostics['train']['total_chunks_after_selection']}")
+    print(f"Test chunks:  {diagnostics['test']['total_chunks_after_selection']}")
     print(f"Accuracy:   {report['accuracy']:.4f}")
     print(f"Macro-F1:   {report['macro_f1']:.4f}")
 
@@ -469,25 +569,44 @@ def _summarize_chunk_split(
     chunks: ChunkedDocumentExamples,
     max_chunks_per_doc: int,
 ) -> dict[str, Any]:
-    document_count = len(chunks.chunks_per_document_after_cap)
+    document_count = len(chunks.chunks_per_document_after_selection)
     generated_chunks = len(chunks.chunk_texts)
-    before_cap_counts = chunks.chunks_per_document_before_cap
-    after_cap_counts = chunks.chunks_per_document_after_cap
+    before_cap_counts = chunks.chunks_per_document_before_selection
+    after_cap_counts = chunks.chunks_per_document_after_selection
     more_than_one_count = sum(count > 1 for count in before_cap_counts)
     hit_cap_count = sum(count > max_chunks_per_doc for count in before_cap_counts)
+    total_chunks_before = sum(before_cap_counts)
+    total_chunks_after = sum(after_cap_counts)
     return {
         "original_documents": document_count,
         "generated_chunks": generated_chunks,
+        "total_chunks_before_selection": total_chunks_before,
+        "total_chunks_after_selection": total_chunks_after,
         "average_chunks_per_document": (
             generated_chunks / document_count if document_count else 0.0
+        ),
+        "average_chunks_before_selection_per_document": (
+            total_chunks_before / document_count if document_count else 0.0
+        ),
+        "average_chunks_after_selection_per_document": (
+            total_chunks_after / document_count if document_count else 0.0
+        ),
+        "percent_chunks_retained": (
+            100.0 * total_chunks_after / total_chunks_before if total_chunks_before else 0.0
         ),
         "max_chunks_per_document_before_cap": max(before_cap_counts) if before_cap_counts else 0,
         "percent_documents_with_more_than_one_chunk": (
             100.0 * more_than_one_count / document_count if document_count else 0.0
         ),
         "documents_hitting_max_chunks_per_doc_cap": int(hit_cap_count),
+        "percent_documents_capped": (
+            100.0 * hit_cap_count / document_count if document_count else 0.0
+        ),
         "percent_documents_hitting_max_chunks_per_doc_cap": (
             100.0 * hit_cap_count / document_count if document_count else 0.0
+        ),
+        "average_selected_document_coverage": (
+            sum(chunks.selected_document_coverage) / document_count if document_count else 0.0
         ),
         "chunks_per_document_after_cap": after_cap_counts,
     }
@@ -496,12 +615,50 @@ def _summarize_chunk_split(
 def _format_chunk_diagnostic_row(split_name: str, diagnostics: dict[str, Any]) -> str:
     return (
         f"| {split_name} | {diagnostics['original_documents']} | "
-        f"{diagnostics['generated_chunks']} | "
-        f"{diagnostics['average_chunks_per_document']:.2f} | "
-        f"{diagnostics['max_chunks_per_document_before_cap']} | "
-        f"{diagnostics['percent_documents_with_more_than_one_chunk']:.2f}% | "
-        f"{diagnostics['percent_documents_hitting_max_chunks_per_doc_cap']:.2f}% |"
+        f"{diagnostics['total_chunks_before_selection']} | "
+        f"{diagnostics['total_chunks_after_selection']} | "
+        f"{diagnostics['average_chunks_before_selection_per_document']:.2f} | "
+        f"{diagnostics['average_chunks_after_selection_per_document']:.2f} | "
+        f"{diagnostics['percent_chunks_retained']:.2f}% | "
+        f"{diagnostics['percent_documents_capped']:.2f}% | "
+        f"{diagnostics['average_selected_document_coverage']:.2f}% |"
     )
+
+
+def _estimate_selected_coverage(chunks: Sequence[DocumentChunk], total_words: int) -> float:
+    if total_words <= 0:
+        return 0.0
+
+    intervals = sorted((chunk.start_word, chunk.end_word) for chunk in chunks)
+    covered_words = 0
+    current_start: int | None = None
+    current_end: int | None = None
+    for start, end in intervals:
+        if current_start is None or current_end is None:
+            current_start = start
+            current_end = end
+            continue
+        if start <= current_end:
+            current_end = max(current_end, end)
+        else:
+            covered_words += current_end - current_start
+            current_start = start
+            current_end = end
+    if current_start is not None and current_end is not None:
+        covered_words += current_end - current_start
+    return 100.0 * covered_words / total_words
+
+
+def _selection_note(chunk_selection: str) -> str:
+    if chunk_selection == "first_k":
+        return "Selects the first chunks only; this is weak for very long documents."
+    if chunk_selection == "uniform_k":
+        return "Spreads selected chunks approximately across the document."
+    if chunk_selection == "idf_top_k":
+        return "Ranks chunks by training-fitted lexical IDF scores, without using test labels."
+    if chunk_selection == "longest_k":
+        return "Selects the longest chunks as a simple sanity baseline."
+    return "Unknown chunk selection strategy."
 
 
 def _format_confusion_matrix(label_names: list[str], matrix: list[list[int]]) -> str:
