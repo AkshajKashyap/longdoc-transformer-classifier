@@ -150,6 +150,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         classifier_device = metrics.pop("classifier_device")
 
     summary_statistics = calculate_summary_statistics([*train_records, *test_records])
+    report_path = args.reports_dir / f"summary_classifier_{dataset.dataset_name}.md"
+    model_name = (
+        f"{args.summarizer_model} + {args.classifier_model}"
+        if args.classifier == "transformer"
+        else f"{args.summarizer_model} + TF-IDF"
+    )
+    limitations = [
+        "This is not full summarizer fine-tuning.",
+        "The summarizer may only see the first part of very long documents.",
+        "Summaries may remove class-discriminative details.",
+        "Summary-first classification trades recall for compression.",
+    ]
     report = {
         "dataset_name": dataset.dataset_name,
         "hf_path": dataset.hf_path,
@@ -187,12 +199,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "classifier_device": classifier_device,
         "random_state": args.random_state,
-        "limitations": [
-            "This is not full summarizer fine-tuning.",
-            "The summarizer may only see the first part of very long documents.",
-            "Summaries may remove class-discriminative details.",
-            "Summary-first classification trades recall for compression.",
-        ],
+        "limitations": limitations,
+        "metadata": {
+            "method": f"summary_classifier_{dataset.dataset_name}",
+            "dataset": dataset.dataset_name,
+            "model_name": model_name,
+            "max_train_samples": args.max_train_samples,
+            "max_test_samples": args.max_test_samples,
+            "accuracy": metrics["accuracy"],
+            "macro_f1": metrics["macro_f1"],
+            "report_path": str(report_path),
+            "limitations": limitations,
+        },
         **metrics,
     }
     write_reports(report, args.reports_dir)

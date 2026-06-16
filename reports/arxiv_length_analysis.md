@@ -9,22 +9,22 @@
 
 ### Train
 
-- Documents: 1000
-- Characters mean / median / p95 / max: 58162.9 / 46038.0 / 120421.9 / 2344406
-- Whitespace tokens mean / median / p95 / max: 10908.3 / 8257.0 / 24305.6 / 521384
-- Documents above BERT limit: 1000 (100.00%)
+- Documents: 100
+- Characters mean / median / p95 / max: 52640.0 / 46103.0 / 115659.3 / 237138
+- Whitespace tokens mean / median / p95 / max: 9701.6 / 8361.0 / 19897.8 / 35303
+- Documents above BERT limit: 100 (100.00%)
 
 ### Test
 
-- Documents: 500
-- Characters mean / median / p95 / max: 53778.5 / 44694.0 / 113638.1 / 395898
-- Whitespace tokens mean / median / p95 / max: 9973.1 / 8184.0 / 21094.3 / 71155
-- Documents above BERT limit: 500 (100.00%)
+- Documents: 50
+- Characters mean / median / p95 / max: 46046.6 / 40398.0 / 100603.8 / 153228
+- Whitespace tokens mean / median / p95 / max: 8909.1 / 7137.5 / 20540.2 / 34207
+- Documents above BERT limit: 50 (100.00%)
 
 ### Combined
 
-- Documents: 1500
-- Characters mean / median / p95 / max: 56701.4 / 45653.0 / 118934.0 / 2344406
-- Whitespace tokens mean / median / p95 / max: 10596.6 / 8233.5 / 23190.9 / 521384
-- Documents above BERT limit: 1500 (100.00%)
+- Documents: 150
+- Characters mean / median / p95 / max: 50442.2 / 43941.5 / 114603.6 / 237138
+- Whitespace tokens mean / median / p95 / max: 9437.4 / 7941.0 / 20895.8 / 35303
+- Documents above BERT limit: 150 (100.00%)
 

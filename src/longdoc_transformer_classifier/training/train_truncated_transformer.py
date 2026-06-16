@@ -95,6 +95,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         predictions,
         label_names=dataset.label_names,
     )
+    report_path = args.reports_dir / f"truncated_transformer_{dataset.dataset_name}.md"
+    limitations = [
+        "Only the first fixed token window can affect predictions.",
+        "Tiny smoke models validate plumbing, not final performance.",
+    ]
     report = {
         "dataset_name": dataset.dataset_name,
         "hf_path": dataset.hf_path,
@@ -111,6 +116,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "learning_rate": args.learning_rate,
         "random_state": args.random_state,
         "device": str(device),
+        "limitations": limitations,
+        "metadata": {
+            "method": f"truncated_transformer_{dataset.dataset_name}",
+            "dataset": dataset.dataset_name,
+            "model_name": args.model_name,
+            "max_train_samples": args.max_train_samples,
+            "max_test_samples": args.max_test_samples,
+            "accuracy": metrics["accuracy"],
+            "macro_f1": metrics["macro_f1"],
+            "report_path": str(report_path),
+            "limitations": limitations,
+        },
         "truncation_note": (
             "This is a truncation baseline: each document is tokenized once and only the "
             "first max_length tokens are available to the classifier."

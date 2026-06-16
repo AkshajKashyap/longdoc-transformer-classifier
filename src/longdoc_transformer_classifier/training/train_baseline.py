@@ -62,19 +62,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         predictions,
         label_names=dataset.label_names,
     )
+    report_config.reports_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = report_config.reports_dir / f"baseline_{dataset.dataset_name}_metrics.json"
+    report_path = report_config.reports_dir / f"baseline_{dataset.dataset_name}.md"
+    limitations = ["No neural long-context reasoning; relies on lexical features."]
     metrics_with_metadata = {
         "dataset_name": dataset.dataset_name,
         "hf_path": dataset.hf_path,
         "text_field": dataset.text_field,
         "label_field": dataset.label_field,
+        "max_train_samples": args.max_train_samples,
+        "max_test_samples": args.max_test_samples,
         "train_size": len(dataset.train_texts),
         "test_size": len(dataset.test_texts),
+        "limitations": limitations,
+        "metadata": {
+            "method": f"baseline_{dataset.dataset_name}",
+            "dataset": dataset.dataset_name,
+            "model_name": "TF-IDF + Logistic Regression",
+            "max_train_samples": args.max_train_samples,
+            "max_test_samples": args.max_test_samples,
+            "accuracy": metrics["accuracy"],
+            "macro_f1": metrics["macro_f1"],
+            "report_path": str(report_path),
+            "limitations": limitations,
+        },
         **metrics,
     }
 
-    report_config.reports_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = report_config.reports_dir / f"baseline_{dataset.dataset_name}_metrics.json"
-    report_path = report_config.reports_dir / f"baseline_{dataset.dataset_name}.md"
     metrics_path.write_text(
         json.dumps(metrics_with_metadata, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",

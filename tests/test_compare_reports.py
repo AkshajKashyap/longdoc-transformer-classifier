@@ -3,6 +3,7 @@ import json
 from longdoc_transformer_classifier.training.compare_reports import (
     build_comparison,
     load_metric_rows,
+    parse_metrics_file,
     run,
 )
 
@@ -58,6 +59,23 @@ def test_comparison_report_writes_markdown_and_json(tmp_path):
     assert (tmp_path / "model_comparison.md").exists()
     assert (tmp_path / "model_comparison.json").exists()
     assert comparison["rows"][0]["method"] == "baseline_arxiv"
+
+
+def test_comparison_parsing_handles_missing_optional_fields(tmp_path):
+    metrics_path = tmp_path / "custom_arxiv_metrics.json"
+    _write_metrics(metrics_path, {"metadata": {"method": "custom_arxiv", "dataset": "arxiv"}})
+
+    row = parse_metrics_file(metrics_path)
+
+    assert row["method"] == "custom_arxiv"
+    assert row["dataset"] == "arxiv"
+    assert row["accuracy"] is None
+    assert row["macro_f1"] is None
+    assert row["train_samples"] is None
+    assert row["test_samples"] is None
+    assert row["model_name"] == "n/a"
+    assert row["key_limitation"]
+    assert row["structural_takeaway"]
 
 
 def _write_metrics(path, metrics):

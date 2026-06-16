@@ -5,16 +5,14 @@ import json
 from pathlib import Path
 from typing import Any
 
-METHOD_ORDER = [
-    "baseline_ag_news",
-    "baseline_arxiv",
-    "truncated_transformer_ag_news",
-    "truncated_transformer_arxiv",
-    "chunked_transformer_ag_news",
-    "chunked_transformer_arxiv",
-    "summary_classifier_ag_news",
-    "summary_classifier_arxiv",
-]
+from longdoc_transformer_classifier.benchmark_config import (
+    METHOD_FAMILY_LABELS,
+    METHOD_LIMITATIONS,
+    METHOD_STRUCTURAL_TAKEAWAYS,
+    REPORT_METHOD_ORDER,
+)
+
+METHOD_ORDER = REPORT_METHOD_ORDER
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -53,14 +51,44 @@ def load_metric_rows(reports_dir: Path) -> list[dict[str, Any]]:
 
 def parse_metrics_file(path: Path) -> dict[str, Any]:
     metrics = json.loads(path.read_text(encoding="utf-8"))
-    method_name = path.name.removesuffix("_metrics.json")
+    metadata = metrics.get("metadata") if isinstance(metrics.get("metadata"), dict) else {}
+    path_method_name = path.name.removesuffix("_metrics.json")
+    method_name = str(_first_present(metadata.get("method"), path_method_name))
+    method_family = infer_method_family(method_name)
     return {
         "method": method_name,
-        "method_family": infer_method_family(method_name),
-        "dataset": str(metrics.get("dataset_name") or infer_dataset_name(method_name)),
-        "accuracy": _optional_float(metrics.get("accuracy")),
-        "macro_f1": _optional_float(metrics.get("macro_f1")),
+        "method_family": method_family,
+        "method_family_label": METHOD_FAMILY_LABELS.get(method_family, method_family),
+        "dataset": str(
+            _first_present(
+                metadata.get("dataset"),
+                metrics.get("dataset_name"),
+                infer_dataset_name(method_name),
+            )
+        ),
+        "accuracy": _optional_float(_first_present(metadata.get("accuracy"), metrics.get("accuracy"))),
+        "macro_f1": _optional_float(_first_present(metadata.get("macro_f1"), metrics.get("macro_f1"))),
+        "train_samples": _optional_int(
+            _first_present(
+                metadata.get("max_train_samples"),
+                metrics.get("max_train_samples"),
+                metrics.get("train_size"),
+            )
+        ),
+        "test_samples": _optional_int(
+            _first_present(
+                metadata.get("max_test_samples"),
+                metrics.get("max_test_samples"),
+                metrics.get("test_size"),
+            )
+        ),
+        "model_name": infer_model_name(method_name, metrics, metadata),
         "key_settings": summarize_settings(method_name, metrics),
+        "key_limitation": summarize_limitation(method_family, metrics, metadata),
+        "structural_takeaway": METHOD_STRUCTURAL_TAKEAWAYS.get(
+            method_family,
+            METHOD_STRUCTURAL_TAKEAWAYS["unknown"],
+        ),
         "metrics_path": str(path),
     }
 
@@ -121,6 +149,26 @@ def build_markdown_report(comparison: dict[str, Any]) -> str:
             f"{row['key_settings']} |"
         )
 
+    lines.extend(
+        [
+            "",
+            "## Benchmark View",
+            "",
+            "| Method | Family | Dataset | Accuracy | Macro-F1 | Train Samples | "
+            "Test Samples | Model | Key Limitation | Structural Takeaway |",
+            "| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |",
+        ]
+    )
+    for row in comparison["rows"]:
+        lines.append(
+            f"| `{row['method']}` | {_clean_cell(row['method_family_label'])} | "
+            f"`{row['dataset']}` | {_format_metric(row['accuracy'])} | "
+            f"{_format_metric(row['macro_f1'])} | {_format_int(row['train_samples'])} | "
+            f"{_format_int(row['test_samples'])} | {_clean_cell(row['model_name'])} | "
+            f"{_clean_cell(row['key_limitation'])} | "
+            f"{_clean_cell(row['structural_takeaway'])} |"
+        )
+
     lines.extend(["", "## Best By Dataset", ""])
     for dataset, row in comparison["best_by_dataset"].items():
         lines.append(
@@ -169,6 +217,48 @@ def summarize_settings(method_name: str, metrics: dict[str, Any]) -> str:
     return "n/a"
 
 
+def infer_model_name(
+    method_name: str,
+    metrics: dict[str, Any],
+    metadata: dict[str, Any],
+) -> str:
+    metadata_model = metadata.get("model_name")
+    if metadata_model:
+        return str(metadata_model)
+    if metrics.get("model_name"):
+        return str(metrics["model_name"])
+    if method_name.startswith("baseline_"):
+        return "TF-IDF + Logistic Regression"
+    if method_name.startswith("summary_classifier_"):
+        summarizer = metrics.get("summarizer_model")
+        classifier = metrics.get("classifier")
+        classifier_model = metrics.get("classifier_model")
+        if classifier_model:
+            return f"{summarizer} + {classifier_model}"
+        if summarizer and classifier:
+            return f"{summarizer} + {classifier}"
+        if summarizer:
+            return str(summarizer)
+    return "n/a"
+
+
+def summarize_limitation(
+    method_family: str,
+    metrics: dict[str, Any],
+    metadata: dict[str, Any],
+) -> str:
+    limitations = metadata.get("limitations") or metrics.get("limitations")
+    if isinstance(limitations, list) and limitations:
+        return str(limitations[0])
+    if isinstance(limitations, str) and limitations:
+        return limitations
+    if metrics.get("limitation_note"):
+        return str(metrics["limitation_note"])
+    if metrics.get("truncation_note"):
+        return str(metrics["truncation_note"])
+    return METHOD_LIMITATIONS.get(method_family, METHOD_LIMITATIONS["unknown"])
+
+
 def infer_method_family(method_name: str) -> str:
     if method_name.startswith("baseline_"):
         return "tfidf_baseline"
@@ -198,8 +288,27 @@ def _optional_float(value: Any) -> float | None:
     return float(value) if value is not None else None
 
 
+def _optional_int(value: Any) -> int | None:
+    return int(value) if value is not None else None
+
+
+def _first_present(*values: Any) -> Any:
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+
 def _format_metric(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.4f}"
+
+
+def _format_int(value: int | None) -> str:
+    return "n/a" if value is None else str(value)
+
+
+def _clean_cell(value: Any) -> str:
+    return str(value).replace("|", "/").replace("\n", " ")
 
 
 if __name__ == "__main__":

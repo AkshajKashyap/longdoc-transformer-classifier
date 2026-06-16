@@ -6,8 +6,8 @@
       "method": "baseline_ag_news"
     },
     "arxiv": {
-      "accuracy": 0.788,
-      "macro_f1": 0.7826381277553861,
+      "accuracy": 0.56,
+      "macro_f1": 0.49723912451185176,
       "method": "baseline_arxiv"
     }
   },
@@ -15,65 +15,107 @@
     {
       "accuracy": 0.74,
       "dataset": "ag_news",
+      "key_limitation": "No neural long-context reasoning; relies on lexical signals.",
       "key_settings": "TF-IDF + Logistic Regression",
       "macro_f1": 0.7375842745819106,
       "method": "baseline_ag_news",
       "method_family": "tfidf_baseline",
-      "metrics_path": "reports/baseline_ag_news_metrics.json"
+      "method_family_label": "TF-IDF + Logistic Regression",
+      "metrics_path": "reports/baseline_ag_news_metrics.json",
+      "model_name": "TF-IDF + Logistic Regression",
+      "structural_takeaway": "Strong lexical baseline, no neural long-context reasoning.",
+      "test_samples": 500,
+      "train_samples": 1000
     },
     {
-      "accuracy": 0.788,
+      "accuracy": 0.56,
       "dataset": "arxiv",
+      "key_limitation": "No neural long-context reasoning; relies on lexical features.",
       "key_settings": "TF-IDF + Logistic Regression",
-      "macro_f1": 0.7826381277553861,
+      "macro_f1": 0.49723912451185176,
       "method": "baseline_arxiv",
       "method_family": "tfidf_baseline",
-      "metrics_path": "reports/baseline_arxiv_metrics.json"
+      "method_family_label": "TF-IDF + Logistic Regression",
+      "metrics_path": "reports/baseline_arxiv_metrics.json",
+      "model_name": "TF-IDF + Logistic Regression",
+      "structural_takeaway": "Strong lexical baseline, no neural long-context reasoning.",
+      "test_samples": 50,
+      "train_samples": 100
     },
     {
       "accuracy": 0.28,
       "dataset": "ag_news",
+      "key_limitation": "This is a truncation baseline: each document is tokenized once and only the first max_length tokens are available to the classifier.",
       "key_settings": "model=prajjwal1/bert-tiny, max_length=128",
       "macro_f1": 0.26051688360686664,
       "method": "truncated_transformer_ag_news",
       "method_family": "truncated_transformer",
-      "metrics_path": "reports/truncated_transformer_ag_news_metrics.json"
+      "method_family_label": "Truncated Transformer",
+      "metrics_path": "reports/truncated_transformer_ag_news_metrics.json",
+      "model_name": "prajjwal1/bert-tiny",
+      "structural_takeaway": "Shows what happens when long documents are clipped.",
+      "test_samples": 50,
+      "train_samples": 100
     },
     {
       "accuracy": 0.16,
       "dataset": "arxiv",
+      "key_limitation": "This is a truncation baseline: each document is tokenized once and only the first max_length tokens are available to the classifier.",
       "key_settings": "model=prajjwal1/bert-tiny, max_length=512",
       "macro_f1": 0.07824675324675325,
       "method": "truncated_transformer_arxiv",
       "method_family": "truncated_transformer",
-      "metrics_path": "reports/truncated_transformer_arxiv_metrics.json"
+      "method_family_label": "Truncated Transformer",
+      "metrics_path": "reports/truncated_transformer_arxiv_metrics.json",
+      "model_name": "prajjwal1/bert-tiny",
+      "structural_takeaway": "Shows what happens when long documents are clipped.",
+      "test_samples": 50,
+      "train_samples": 100
     },
     {
       "accuracy": 0.2,
       "dataset": "ag_news",
+      "key_limitation": "Chunk labels are weak labels inherited from the parent document; not every chunk necessarily contains evidence for the document label.",
       "key_settings": "model=prajjwal1/bert-tiny, chunk_size=100, overlap=20, cap=4, aggregation=mean_proba",
       "macro_f1": 0.0847457627118644,
       "method": "chunked_transformer_ag_news",
       "method_family": "chunked_transformer",
-      "metrics_path": "reports/chunked_transformer_ag_news_metrics.json"
+      "method_family_label": "Chunked Transformer",
+      "metrics_path": "reports/chunked_transformer_ag_news_metrics.json",
+      "model_name": "prajjwal1/bert-tiny",
+      "structural_takeaway": "Structurally sees more text, but uses weak inherited chunk labels.",
+      "test_samples": 50,
+      "train_samples": 100
     },
     {
       "accuracy": 0.26,
       "dataset": "arxiv",
+      "key_limitation": "Chunk labels are weak labels inherited from the parent document; not every chunk necessarily contains evidence for the document label.",
       "key_settings": "model=prajjwal1/bert-tiny, chunk_size=220, overlap=40, cap=8, aggregation=mean_proba",
       "macro_f1": 0.16631143975641585,
       "method": "chunked_transformer_arxiv",
       "method_family": "chunked_transformer",
-      "metrics_path": "reports/chunked_transformer_arxiv_metrics.json"
+      "method_family_label": "Chunked Transformer",
+      "metrics_path": "reports/chunked_transformer_arxiv_metrics.json",
+      "model_name": "prajjwal1/bert-tiny",
+      "structural_takeaway": "Structurally sees more text, but uses weak inherited chunk labels.",
+      "test_samples": 50,
+      "train_samples": 100
     },
     {
       "accuracy": 0.2,
       "dataset": "arxiv",
+      "key_limitation": "This is not full summarizer fine-tuning.",
       "key_settings": "summarizer=sshleifer/distilbart-cnn-12-6, classifier=tfidf, classifier_model=n/a",
       "macro_f1": 0.1515151515151515,
       "method": "summary_classifier_arxiv",
       "method_family": "summary_classifier",
-      "metrics_path": "reports/summary_classifier_arxiv_metrics.json"
+      "method_family_label": "Summary-First Classifier",
+      "metrics_path": "reports/summary_classifier_arxiv_metrics.json",
+      "model_name": "sshleifer/distilbart-cnn-12-6 + tfidf",
+      "structural_takeaway": "Compresses long documents, but may discard class evidence.",
+      "test_samples": 15,
+      "train_samples": 30
     }
   ],
   "warning": "Smoke runs with tiny models and tiny sample sizes are useful engineering checks, not final model rankings."

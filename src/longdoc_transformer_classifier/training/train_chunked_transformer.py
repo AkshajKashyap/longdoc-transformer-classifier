@@ -175,6 +175,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         max_chunks_per_doc=args.max_chunks_per_doc,
         aggregation=args.aggregation,
     )
+    report_path = args.reports_dir / f"chunked_transformer_{dataset.dataset_name}.md"
+    limitations = [
+        "Chunks inherit weak document labels and may lack class evidence.",
+        "Aggregation is document-level, but chunk supervision is noisy.",
+    ]
     report = {
         "dataset_name": dataset.dataset_name,
         "hf_path": dataset.hf_path,
@@ -195,6 +200,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "learning_rate": args.learning_rate,
         "random_state": args.random_state,
         "device": str(device),
+        "limitations": limitations,
+        "metadata": {
+            "method": f"chunked_transformer_{dataset.dataset_name}",
+            "dataset": dataset.dataset_name,
+            "model_name": args.model_name,
+            "max_train_samples": args.max_train_samples,
+            "max_test_samples": args.max_test_samples,
+            "accuracy": metrics["accuracy"],
+            "macro_f1": metrics["macro_f1"],
+            "report_path": str(report_path),
+            "limitations": limitations,
+        },
         "limitation_note": (
             "Chunk labels are weak labels inherited from the parent document; not every chunk "
             "necessarily contains evidence for the document label."

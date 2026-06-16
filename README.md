@@ -1,76 +1,86 @@
 # LongDoc Transformer Classifier
 
-This project is a long-document NLP classification workbench. The longer-term goal is to compare:
+This repo is a long-document NLP classification benchmark. The purpose is to compare simple,
+reproducible baselines before investing in heavier long-context modeling.
+
+The longer-term comparison plan is:
 
 - TF-IDF + Logistic Regression baseline
 - truncated transformer baseline
 - chunked transformer baseline
 - summarization-first classifier
-- optional Longformer/BigBird baseline
+- optional Longformer/BigBird baseline later
 
-## Current Milestone
+## Current Status
 
-Milestone 5 keeps the modeling intentionally modest while comparing several long-document strategies.
+Milestone 6 consolidates the earlier scripts into a small benchmark project with:
 
-The project now supports:
+- `ag_news` as a fast smoke dataset
+- `arxiv`, backed by Hugging Face `ccdv/arxiv-classification`, as the long-document target
+- document length analysis with rough 512-token truncation checks
+- deterministic word chunking utilities
+- TF-IDF, truncated transformer, chunked transformer, and summary-first smoke baselines
+- unified comparison reports and matplotlib figures
+- method notes, interview notes, and limitations docs
 
-- `ag_news`, used as a fast smoke baseline
-- `arxiv`, backed by Hugging Face `ccdv/arxiv-classification`, used as the first real long-document classification dataset
-- document length analysis with rough 512-token BERT truncation checks
-- fixed-size overlapping word chunking utilities
-- TF-IDF + Logistic Regression baselines for both datasets
-- naive truncated transformer baselines
-- chunked transformer baselines with document-level aggregation
-- summary-first classifier baselines
-- unified report comparison
+The repo still does not include FastAPI, Streamlit, monitoring, Longformer, BigBird, or fine-tuned BART.
 
-It still does not include long-context transformers, APIs, dashboards, or monitoring.
-
-## Setup
+## Quickstart
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 make install
-```
-
-## Run Checks
-
-```bash
 make check
 ```
 
-This runs:
+Run the practical quick benchmark on the long-document dataset:
 
 ```bash
-ruff check .
-pytest -q
+python -m longdoc_transformer_classifier.training.run_benchmark_suite --dataset arxiv --quick
 ```
 
-## Train The Baseline
+The quick benchmark runs length analysis, the TF-IDF baseline, and report comparison. It skips
+transformer and summary smoke runs unless requested.
+
+## Benchmark Commands
+
+Quick classical benchmark:
 
 ```bash
-python -m longdoc_transformer_classifier.training.train_baseline --dataset ag_news --max-train-samples 5000 --max-test-samples 1000
+make benchmark-quick
 ```
 
-or:
+Include tiny transformer smoke runs:
 
 ```bash
-make baseline
+make benchmark-transformers
 ```
 
-Run the long-document baseline with:
+Include tiny transformer and summary-first smoke runs:
 
 ```bash
-python -m longdoc_transformer_classifier.training.train_baseline --dataset arxiv --max-train-samples 1000 --max-test-samples 500
+make benchmark-full-smoke
 ```
 
-Baseline reports use dataset-specific filenames:
+Refresh comparison reports:
 
-- `reports/baseline_{dataset_name}.md`
-- `reports/baseline_{dataset_name}_metrics.json`
+```bash
+python -m longdoc_transformer_classifier.training.compare_reports
+```
 
-## Analyze Dataset Lengths
+Generate figures:
+
+```bash
+python -m longdoc_transformer_classifier.training.plot_comparison
+```
+
+Figures are written to:
+
+- `reports/figures/model_macro_f1_by_method.png`
+- `reports/figures/model_accuracy_by_method.png`
+
+## Dataset Analysis
 
 AG News is short and useful for fast pipeline checks:
 
@@ -78,7 +88,7 @@ AG News is short and useful for fast pipeline checks:
 python -m longdoc_transformer_classifier.training.analyze_dataset --dataset ag_news --max-train-samples 1000 --max-test-samples 500
 ```
 
-The arXiv dataset is closer to the real project goal because each example is a paper-length scientific document with a subject-area label:
+arXiv is closer to the real project goal because examples are long scientific documents:
 
 ```bash
 python -m longdoc_transformer_classifier.training.analyze_dataset --dataset arxiv --max-train-samples 1000 --max-test-samples 500
@@ -89,114 +99,80 @@ Length reports are saved as:
 - `reports/{dataset_name}_length_analysis.md`
 - `reports/{dataset_name}_length_analysis.json`
 
-## Why AG News Is Only A Smoke Baseline
+## Baseline Training
 
-`ag_news` downloads quickly, has clean labels, and keeps tests and local smoke runs cheap. It is not a long-document dataset, so it does not answer whether truncation will discard important evidence.
-
-## Why arXiv Is Closer To The Goal
-
-`ccdv/arxiv-classification` provides long scientific documents with classification labels. It lets the project measure document lengths, estimate how often a 512-token transformer input would truncate the document, and prove the same baseline pipeline can run on realistic long texts.
-
-## Why Chunking Matters
-
-Most standard transformer classifiers can only read a fixed-size window. For long documents, a later model will need to split each document into chunks, classify or encode those chunks, and aggregate evidence back to the original document. This milestone adds deterministic word chunking with configurable chunk size and overlap so that later transformer experiments can share one tested chunking foundation.
-
-## Truncated Transformer Baseline
-
-Milestone 3 adds a deliberately naive transformer baseline: tokenize each raw document once, truncate to `max_length`, and train a standard sequence classifier on only that prefix. This is not a long-document solution. It matters because it gives the later chunking and summarization milestones a fair comparison against the simplest transformer approach.
-
-Use `prajjwal1/bert-tiny` for quick CPU smoke runs:
+AG News smoke baseline:
 
 ```bash
-python -m longdoc_transformer_classifier.training.train_truncated_transformer --dataset ag_news --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 128
+python -m longdoc_transformer_classifier.training.train_baseline --dataset ag_news --max-train-samples 5000 --max-test-samples 1000
 ```
+
+arXiv long-document baseline:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_baseline --dataset arxiv --max-train-samples 1000 --max-test-samples 500
+```
+
+Baseline reports are saved as:
+
+- `reports/baseline_{dataset_name}.md`
+- `reports/baseline_{dataset_name}_metrics.json`
+
+## Transformer Smoke Runs
+
+Truncated transformer smoke run:
 
 ```bash
 python -m longdoc_transformer_classifier.training.train_truncated_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 4 --max-length 512
 ```
 
-`distilbert-base-uncased` is the default and a more realistic baseline model once you are ready for a slower run:
-
-```bash
-python -m longdoc_transformer_classifier.training.train_truncated_transformer --dataset arxiv --model-name distilbert-base-uncased --max-train-samples 1000 --max-test-samples 500 --epochs 1 --batch-size 8 --max-length 512
-```
-
-The truncated transformer reports are saved as:
-
-- `reports/truncated_transformer_{dataset_name}.md`
-- `reports/truncated_transformer_{dataset_name}_metrics.json`
-
-## Chunked Transformer Baseline
-
-Truncation is naive because a standard transformer sees only the first `max_length` tokens. For arXiv papers, that often means the model never sees most of the document.
-
-The chunked baseline is structurally better for long documents: it splits each document into overlapping word chunks, trains a transformer classifier on those chunks, then aggregates chunk predictions back to one document-level prediction. This differs from summarization because it does not rewrite or compress the document, and it differs from Longformer/BigBird because it still uses a regular fixed-window encoder.
-
-Chunk labels are imperfect: every chunk inherits the parent document label, even if that chunk does not contain the evidence for the label. The report calls this out explicitly and computes metrics only at the document level.
-
-Supported aggregation strategies:
-
-- `mean_proba`: average class probabilities across chunks
-- `max_proba`: use the most confident chunk's probability distribution
-- `majority_vote`: vote over chunk-level predicted classes
-
-Smoke run for AG News:
-
-```bash
-python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset ag_news --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 128 --chunk-size 100 --chunk-overlap 20 --max-chunks-per-doc 4 --aggregation mean_proba
-```
-
-Smoke run for arXiv:
+Chunked transformer smoke run:
 
 ```bash
 python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 256 --chunk-size 220 --chunk-overlap 40 --max-chunks-per-doc 8 --aggregation mean_proba
 ```
 
-The chunked transformer reports are saved as:
-
-- `reports/chunked_transformer_{dataset_name}.md`
-- `reports/chunked_transformer_{dataset_name}_metrics.json`
-
-## Summary-First Classifier Baseline
-
-Summarization is a compression strategy for long documents: generate a shorter text first, then classify the compressed text. This differs from truncation because the classifier sees a generated summary rather than only the raw prefix. It can still fail because the summarizer itself has an input limit, may only see the first part of a long document, and may remove details that are important for classification.
-
-Summary generation is cached under `data/processed/summaries/`. The cache key includes dataset, split, summarizer model, sample size, max input tokens, and generation settings. A matching cache is reused automatically unless `--force-regenerate-summaries` is passed.
-
-Smoke run for arXiv:
+Summary-first smoke run:
 
 ```bash
 python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset arxiv --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 1024 --summary-max-new-tokens 120 --summary-min-new-tokens 30 --summary-num-beams 2 --classifier tfidf
 ```
 
-Optional AG News smoke run:
+## Current Best Result
 
-```bash
-python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset ag_news --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 512 --summary-max-new-tokens 80 --summary-min-new-tokens 20 --summary-num-beams 2 --classifier tfidf
-```
+In the current smoke reports, TF-IDF + Logistic Regression is the strongest method on both AG News and
+arXiv by macro-F1. That is expected: TF-IDF sees the full document vocabulary, while the tiny transformer
+runs are intentionally small pipeline checks.
 
-The summary classifier reports are saved as:
+Do not overinterpret smoke transformer scores. `prajjwal1/bert-tiny` validates training, chunking,
+aggregation, and reporting mechanics; it is not a serious performance baseline.
 
-- `reports/summary_classifier_{dataset_name}.md`
-- `reports/summary_classifier_{dataset_name}_metrics.json`
+## Why AG News Is Only A Smoke Baseline
 
-## Compare Reports
+`ag_news` downloads quickly, has clean labels, and keeps local checks cheap. It is not a long-document
+dataset, so it does not answer whether truncation will discard important evidence.
 
-Build a unified comparison from whatever metrics files are available:
+## Why arXiv Is The Long-Document Target
 
-```bash
-python -m longdoc_transformer_classifier.training.compare_reports
-```
+`ccdv/arxiv-classification` provides long scientific documents with classification labels. It lets the
+project measure document lengths, estimate how often a 512-token input would truncate the document, and
+prove that the same pipeline can run on realistic long texts.
 
-The comparison outputs are:
+## Why Chunking Matters
 
-- `reports/model_comparison.md`
-- `reports/model_comparison.json`
+Most standard transformer classifiers can only read a fixed-size window. For long documents, a model
+needs to split each document into chunks, classify or encode those chunks, and aggregate evidence back
+to the original document. This repo keeps chunking deterministic and tested so later transformer
+experiments share the same foundation.
 
-## What This Baseline Proves
+## Documentation
 
-The first five milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train classical, truncated-transformer, chunked-transformer, and summary-first baselines, compute comparable document-level metrics, chunk long documents, cache generated summaries, and save comparison reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
+- `docs/method_notes.md` explains what each method proves.
+- `docs/interview_notes.md` gives concise project talking points.
+- `docs/limitations.md` lists the caveats behind the current smoke results.
 
 ## What Comes Next
 
-Next milestones can add stronger summary models, better chunk selection, and eventually long-context transformer baselines. Each should reuse the same data, chunking, metrics, and reporting foundations where possible.
+Future milestones can add stronger summary models, better chunk selection, hierarchical aggregation,
+and eventually true long-context transformer baselines. Each should reuse the same data, chunking,
+metrics, comparison, and plotting foundations.

@@ -8,7 +8,8 @@ dependencies = [
     "scikit-learn",
     "datasets",
     "torch",
-    "transformers"
+    "transformers",
+    "matplotlib"
 ]
 
 [project.optional-dependencies]
