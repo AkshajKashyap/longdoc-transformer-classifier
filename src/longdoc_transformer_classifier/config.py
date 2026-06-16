@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 DEFAULT_RANDOM_STATE = 42
 
@@ -20,6 +21,9 @@ class DatasetConfig:
 class TfidfConfig:
     max_features: int = 50_000
     ngram_range: tuple[int, int] = (1, 2)
+    min_df: int | float = 1
+    max_df: int | float = 1.0
+    sublinear_tf: bool = False
 
 
 @dataclass(frozen=True)
@@ -27,6 +31,7 @@ class BaselineModelConfig:
     max_iter: int = 1_000
     random_state: int = DEFAULT_RANDOM_STATE
     solver: str = "lbfgs"
+    class_weight: Literal["balanced"] | None = None
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,85 @@
+{
+  "best_result": {
+    "accuracy": 0.818,
+    "macro_f1": 0.8154847959012657,
+    "setting": {
+      "class_weight": null,
+      "max_features": 100000,
+      "ngram_range": [
+        1,
+        2
+      ],
+      "sublinear_tf": true
+    }
+  },
+  "dataset": "arxiv",
+  "dataset_name": "arxiv",
+  "hf_path": "ccdv/arxiv-classification",
+  "label_field": "label",
+  "max_df": 0.95,
+  "max_iter": 1000,
+  "max_test_samples": 1000,
+  "max_train_samples": 3000,
+  "method": "tfidf_sweep_arxiv",
+  "min_df": 2,
+  "random_state": 42,
+  "results": [
+    {
+      "accuracy": 0.794,
+      "macro_f1": 0.791673267734101,
+      "setting": {
+        "class_weight": null,
+        "max_features": 50000,
+        "ngram_range": [
+          1,
+          1
+        ],
+        "sublinear_tf": false
+      }
+    },
+    {
+      "accuracy": 0.8,
+      "macro_f1": 0.7970783695834034,
+      "setting": {
+        "class_weight": null,
+        "max_features": 50000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": false
+      }
+    },
+    {
+      "accuracy": 0.818,
+      "macro_f1": 0.8154847959012657,
+      "setting": {
+        "class_weight": null,
+        "max_features": 100000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": true
+      }
+    },
+    {
+      "accuracy": 0.818,
+      "macro_f1": 0.8154847959012657,
+      "setting": {
+        "class_weight": "balanced",
+        "max_features": 100000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": true
+      }
+    }
+  ],
+  "solver": "lbfgs",
+  "test_size": 1000,
+  "text_field": "text",
+  "train_size": 3000,
+  "warning": "This is still a classical lexical baseline, not neural long-context reasoning."
+}

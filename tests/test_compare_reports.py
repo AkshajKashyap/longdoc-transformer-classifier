@@ -124,5 +124,30 @@ def test_comparison_report_parses_long_context_transformer_metrics(tmp_path):
     assert "freeze_encoder=True" in row["key_settings"]
 
 
+def test_comparison_report_includes_best_tfidf_sweep_result(tmp_path):
+    _write_metrics(
+        tmp_path / "tfidf_sweep_arxiv.json",
+        {
+            "method": "tfidf_sweep_arxiv",
+            "dataset_name": "arxiv",
+            "max_train_samples": 100,
+            "max_test_samples": 50,
+            "best_result": {
+                "accuracy": 0.9,
+                "macro_f1": 0.85,
+                "setting": {"max_features": 1000, "ngram_range": [1, 2]},
+            },
+            "results": [],
+        },
+    )
+
+    rows = load_metric_rows(tmp_path)
+
+    assert rows[0]["method"] == "tfidf_sweep_arxiv"
+    assert rows[0]["method_family"] == "tfidf_sweep"
+    assert rows[0]["accuracy"] == 0.9
+    assert rows[0]["macro_f1"] == 0.85
+
+
 def _write_metrics(path, metrics):
     path.write_text(json.dumps(metrics), encoding="utf-8")

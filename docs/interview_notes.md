@@ -54,3 +54,46 @@ little data or adaptation time.
 With more compute, the next steps would be larger transformer smoke runs, better chunk selection,
 hierarchical aggregation, stronger summarizers, calibration checks, and eventually true long-context
 models such as Longformer or BigBird.
+
+## Talk Track
+
+### 30-Second Explanation
+
+I built a reproducible benchmark for long-document classification. It compares TF-IDF, truncated
+transformers, chunked transformers, summary-first classification, and Longformer-style long-context
+models on short and long datasets, with honest reports showing that simple lexical baselines can beat
+poorly adapted neural methods under constrained training.
+
+### 2-Minute Explanation
+
+The core problem is that many documents are far longer than normal transformer context windows. I first
+implemented a strong TF-IDF baseline, then measured document lengths, added chunking and chunk
+selection, tested truncation, summary-first classification, and finally a conservative Longformer
+baseline. The repo emphasizes reproducibility: every run writes metrics, reports, comparison tables, and
+plots. The main result is not that TF-IDF is universally better, but that a benchmark must include
+strong simple baselines before interpreting expensive neural runs.
+
+### Likely Interviewer Questions
+
+**Why did TF-IDF beat transformers?**  
+The transformer runs are tiny, frozen or undertrained smoke checks, while TF-IDF sees the full document
+vocabulary and arXiv labels have strong lexical cues.
+
+**Why use Longformer?**  
+It adds the missing architectural baseline: a transformer designed for longer windows, unlike
+truncation or manual chunk aggregation.
+
+**Why not just summarize everything?**  
+Summaries can omit class evidence, and summarizers have their own input limits. It is a useful baseline,
+not a universal solution.
+
+**What is weak about chunk labels?**  
+Every chunk inherits the document label, even if that chunk contains no evidence for the label.
+
+**How would you improve this with more compute?**  
+Run larger sweeps, fully fine-tune long-context models, learn chunk selection, improve summary
+selection, and add calibration.
+
+**What did you learn?**  
+Long-document modeling is as much an evaluation and evidence-coverage problem as a model-choice
+problem. Strong baselines keep the comparison honest.

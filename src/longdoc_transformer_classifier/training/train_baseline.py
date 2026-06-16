@@ -25,6 +25,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-features", type=int, default=50_000)
     parser.add_argument("--ngram-min", type=int, default=1)
     parser.add_argument("--ngram-max", type=int, default=2)
+    parser.add_argument("--min-df", type=_parse_int_or_float, default=1)
+    parser.add_argument("--max-df", type=_parse_int_or_float, default=1.0)
+    parser.add_argument("--sublinear-tf", action="store_true")
+    parser.add_argument("--class-weight", choices=["balanced"], default=None)
+    parser.add_argument("--solver", default="lbfgs")
     parser.add_argument("--max-iter", type=int, default=1_000)
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--reports-dir", type=Path, default=Path("reports"))
@@ -45,10 +50,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         max_train_samples=args.max_train_samples,
         max_test_samples=args.max_test_samples,
     )
-    feature_config = TfidfConfig(max_features=args.max_features, ngram_range=ngram_range)
+    feature_config = TfidfConfig(
+        max_features=args.max_features,
+        ngram_range=ngram_range,
+        min_df=args.min_df,
+        max_df=args.max_df,
+        sublinear_tf=args.sublinear_tf,
+    )
     model_config = BaselineModelConfig(
         max_iter=args.max_iter,
         random_state=args.random_state,
+        solver=args.solver,
+        class_weight=args.class_weight,
     )
     report_config = ReportConfig(reports_dir=args.reports_dir)
 
@@ -75,6 +88,19 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "max_test_samples": args.max_test_samples,
         "train_size": len(dataset.train_texts),
         "test_size": len(dataset.test_texts),
+        "tfidf_config": {
+            "max_features": feature_config.max_features,
+            "ngram_range": list(feature_config.ngram_range),
+            "min_df": feature_config.min_df,
+            "max_df": feature_config.max_df,
+            "sublinear_tf": feature_config.sublinear_tf,
+        },
+        "model_config": {
+            "solver": model_config.solver,
+            "max_iter": model_config.max_iter,
+            "class_weight": model_config.class_weight,
+            "random_state": model_config.random_state,
+        },
         "limitations": limitations,
         "metadata": {
             "method": f"baseline_{dataset.dataset_name}",
@@ -105,6 +131,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             test_size=len(dataset.test_texts),
             max_features=feature_config.max_features,
             ngram_range=feature_config.ngram_range,
+            min_df=feature_config.min_df,
+            max_df=feature_config.max_df,
+            sublinear_tf=feature_config.sublinear_tf,
+            class_weight=model_config.class_weight,
+            solver=model_config.solver,
+            max_iter=model_config.max_iter,
             random_state=model_config.random_state,
         ),
         encoding="utf-8",
@@ -132,6 +164,13 @@ def _parse_ngram_range(ngram_min: int, ngram_max: int) -> tuple[int, int]:
     return ngram_min, ngram_max
 
 
+def _parse_int_or_float(value: str) -> int | float:
+    try:
+        return int(value)
+    except ValueError:
+        return float(value)
+
+
 def _build_markdown_report(
     metrics: dict[str, Any],
     dataset_name: str,
@@ -142,6 +181,12 @@ def _build_markdown_report(
     test_size: int,
     max_features: int,
     ngram_range: tuple[int, int],
+    min_df: int | float,
+    max_df: int | float,
+    sublinear_tf: bool,
+    class_weight: str | None,
+    solver: str,
+    max_iter: int,
     random_state: int,
 ) -> str:
     lines = [
@@ -164,6 +209,12 @@ def _build_markdown_report(
         f"- Test samples: {test_size}",
         f"- Max TF-IDF features: {max_features}",
         f"- N-gram range: {ngram_range[0]}-{ngram_range[1]}",
+        f"- Min document frequency: {min_df}",
+        f"- Max document frequency: {max_df}",
+        f"- Sublinear TF: {sublinear_tf}",
+        f"- Class weight: `{class_weight or 'none'}`",
+        f"- Solver: `{solver}`",
+        f"- Max iterations: {max_iter}",
         f"- Random state: {random_state}",
         "",
         "## Metrics",

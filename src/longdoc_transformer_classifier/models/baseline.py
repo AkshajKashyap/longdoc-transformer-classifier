@@ -14,6 +14,7 @@ def create_classifier(config: BaselineModelConfig | None = None) -> LogisticRegr
         max_iter=config.max_iter,
         random_state=config.random_state,
         solver=config.solver,
+        class_weight=config.class_weight,
     )
 
 

@@ -6,8 +6,8 @@
       "method": "baseline_ag_news"
     },
     "arxiv": {
-      "accuracy": 0.56,
-      "macro_f1": 0.49723912451185176,
+      "accuracy": 0.834,
+      "macro_f1": 0.8319839130558271,
       "method": "baseline_arxiv"
     }
   },
@@ -28,19 +28,34 @@
       "train_samples": 1000
     },
     {
-      "accuracy": 0.56,
+      "accuracy": 0.834,
       "dataset": "arxiv",
       "key_limitation": "No neural long-context reasoning; relies on lexical features.",
-      "key_settings": "TF-IDF + Logistic Regression",
-      "macro_f1": 0.49723912451185176,
+      "key_settings": "TF-IDF + Logistic Regression, max_features=100000, ngram=[1, 2], min_df=2, max_df=0.95, sublinear_tf=True, class_weight=balanced",
+      "macro_f1": 0.8319839130558271,
       "method": "baseline_arxiv",
       "method_family": "tfidf_baseline",
       "method_family_label": "TF-IDF + Logistic Regression",
       "metrics_path": "reports/baseline_arxiv_metrics.json",
       "model_name": "TF-IDF + Logistic Regression",
       "structural_takeaway": "Strong lexical baseline, no neural long-context reasoning.",
-      "test_samples": 50,
-      "train_samples": 100
+      "test_samples": 1000,
+      "train_samples": 5000
+    },
+    {
+      "accuracy": 0.818,
+      "dataset": "arxiv",
+      "key_limitation": "Classical lexical baseline; tuning does not add semantic long-context reasoning.",
+      "key_settings": "best_setting={'class_weight': None, 'max_features': 100000, 'ngram_range': [1, 2], 'sublinear_tf': True}",
+      "macro_f1": 0.8154847959012657,
+      "method": "tfidf_sweep_arxiv",
+      "method_family": "tfidf_sweep",
+      "method_family_label": "TF-IDF Sweep",
+      "metrics_path": "reports/tfidf_sweep_arxiv.json",
+      "model_name": "n/a",
+      "structural_takeaway": "Tunes the lexical baseline and establishes a stronger classical reference point.",
+      "test_samples": 1000,
+      "train_samples": 3000
     },
     {
       "accuracy": 0.28,

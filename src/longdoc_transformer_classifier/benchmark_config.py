@@ -53,6 +53,8 @@ STANDARD_SAMPLE_CONFIG = BenchmarkSampleConfig(
 REPORT_METHOD_ORDER = [
     "baseline_ag_news",
     "baseline_arxiv",
+    "tfidf_sweep_ag_news",
+    "tfidf_sweep_arxiv",
     "truncated_transformer_ag_news",
     "truncated_transformer_arxiv",
     "chunked_transformer_ag_news",
@@ -65,6 +67,7 @@ REPORT_METHOD_ORDER = [
 
 METHOD_FAMILY_LABELS = {
     "tfidf_baseline": "TF-IDF + Logistic Regression",
+    "tfidf_sweep": "TF-IDF Sweep",
     "truncated_transformer": "Truncated Transformer",
     "chunked_transformer": "Chunked Transformer",
     "long_context_transformer": "Long-context Transformer",
@@ -74,6 +77,7 @@ METHOD_FAMILY_LABELS = {
 
 METHOD_LIMITATIONS = {
     "tfidf_baseline": "No neural long-context reasoning; relies on lexical signals.",
+    "tfidf_sweep": "Classical lexical baseline; tuning does not add semantic long-context reasoning.",
     "truncated_transformer": "Only the first fixed token window can affect predictions.",
     "chunked_transformer": "Chunks inherit weak document labels and may lack class evidence.",
     "long_context_transformer": "Long-context models are compute-heavy and still bounded by max_length.",
@@ -83,6 +87,7 @@ METHOD_LIMITATIONS = {
 
 METHOD_STRUCTURAL_TAKEAWAYS = {
     "tfidf_baseline": "Strong lexical baseline, no neural long-context reasoning.",
+    "tfidf_sweep": "Tunes the lexical baseline and establishes a stronger classical reference point.",
     "truncated_transformer": "Shows what happens when long documents are clipped.",
     "chunked_transformer": "Structurally sees more text, but uses weak inherited chunk labels.",
     "long_context_transformer": (

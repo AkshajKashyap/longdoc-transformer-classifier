@@ -7,7 +7,8 @@
 | Method | Dataset | Accuracy | Macro-F1 | Key Settings |
 | --- | --- | ---: | ---: | --- |
 | `baseline_ag_news` | `ag_news` | 0.7400 | 0.7376 | TF-IDF + Logistic Regression |
-| `baseline_arxiv` | `arxiv` | 0.5600 | 0.4972 | TF-IDF + Logistic Regression |
+| `baseline_arxiv` | `arxiv` | 0.8340 | 0.8320 | TF-IDF + Logistic Regression, max_features=100000, ngram=[1, 2], min_df=2, max_df=0.95, sublinear_tf=True, class_weight=balanced |
+| `tfidf_sweep_arxiv` | `arxiv` | 0.8180 | 0.8155 | best_setting={'class_weight': None, 'max_features': 100000, 'ngram_range': [1, 2], 'sublinear_tf': True} |
 | `truncated_transformer_ag_news` | `ag_news` | 0.2800 | 0.2605 | model=prajjwal1/bert-tiny, max_length=128 |
 | `truncated_transformer_arxiv` | `arxiv` | 0.1600 | 0.0782 | model=prajjwal1/bert-tiny, max_length=512 |
 | `chunked_transformer_ag_news` | `ag_news` | 0.2000 | 0.0847 | model=prajjwal1/bert-tiny, chunk_selection=first_k, aggregation=mean_proba, max_chunks_per_doc=4, chunk_size=100, overlap=20 |
@@ -20,7 +21,8 @@
 | Method | Family | Dataset | Accuracy | Macro-F1 | Train Samples | Test Samples | Model | Key Limitation | Structural Takeaway |
 | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |
 | `baseline_ag_news` | TF-IDF + Logistic Regression | `ag_news` | 0.7400 | 0.7376 | 1000 | 500 | TF-IDF + Logistic Regression | No neural long-context reasoning; relies on lexical signals. | Strong lexical baseline, no neural long-context reasoning. |
-| `baseline_arxiv` | TF-IDF + Logistic Regression | `arxiv` | 0.5600 | 0.4972 | 100 | 50 | TF-IDF + Logistic Regression | No neural long-context reasoning; relies on lexical features. | Strong lexical baseline, no neural long-context reasoning. |
+| `baseline_arxiv` | TF-IDF + Logistic Regression | `arxiv` | 0.8340 | 0.8320 | 5000 | 1000 | TF-IDF + Logistic Regression | No neural long-context reasoning; relies on lexical features. | Strong lexical baseline, no neural long-context reasoning. |
+| `tfidf_sweep_arxiv` | TF-IDF Sweep | `arxiv` | 0.8180 | 0.8155 | 3000 | 1000 | n/a | Classical lexical baseline; tuning does not add semantic long-context reasoning. | Tunes the lexical baseline and establishes a stronger classical reference point. |
 | `truncated_transformer_ag_news` | Truncated Transformer | `ag_news` | 0.2800 | 0.2605 | 100 | 50 | prajjwal1/bert-tiny | This is a truncation baseline: each document is tokenized once and only the first max_length tokens are available to the classifier. | Shows what happens when long documents are clipped. |
 | `truncated_transformer_arxiv` | Truncated Transformer | `arxiv` | 0.1600 | 0.0782 | 100 | 50 | prajjwal1/bert-tiny | This is a truncation baseline: each document is tokenized once and only the first max_length tokens are available to the classifier. | Shows what happens when long documents are clipped. |
 | `chunked_transformer_ag_news` | Chunked Transformer | `ag_news` | 0.2000 | 0.0847 | 100 | 50 | prajjwal1/bert-tiny | Chunk labels are weak labels inherited from the parent document; not every chunk necessarily contains evidence for the document label. | Structurally sees more text, but uses weak inherited chunk labels. |
@@ -31,7 +33,7 @@
 ## Best By Dataset
 
 - `ag_news`: `baseline_ag_news` by macro-F1 (0.7376)
-- `arxiv`: `baseline_arxiv` by macro-F1 (0.4972)
+- `arxiv`: `baseline_arxiv` by macro-F1 (0.8320)
 
 ## Interpretation
 

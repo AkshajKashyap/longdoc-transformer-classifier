@@ -13,6 +13,9 @@ def build_tfidf_vectorizer(config: TfidfConfig | None = None) -> TfidfVectorizer
     return TfidfVectorizer(
         max_features=config.max_features,
         ngram_range=config.ngram_range,
+        min_df=config.min_df,
+        max_df=config.max_df,
+        sublinear_tf=config.sublinear_tf,
         strip_accents="unicode",
         lowercase=True,
     )
