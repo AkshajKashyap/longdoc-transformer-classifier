@@ -44,3 +44,18 @@ selected chunks.
 
 The current chunk selection strategies do not learn evidence relevance from labels or model feedback.
 They are heuristics for making capped chunked runs less prefix-biased.
+
+## Long-Context Models Still Have Limits
+
+Longformer-style models still have a maximum context window. A `max_length=1024` smoke run does not use
+the full 4096-token capacity of `allenai/longformer-base-4096`.
+
+## Long-Context Smoke Runs Are Expensive
+
+Long-context models use more memory and compute than TF-IDF or chunk heuristics. Batch size 1, tiny
+sample sizes, and encoder freezing keep smoke runs practical but limit what the results prove.
+
+## Frozen Encoders Limit Adaptation
+
+Freezing the encoder trains only the classification head where possible. That is useful for memory and
+speed, but it can understate what a fully fine-tuned long-context model could do.

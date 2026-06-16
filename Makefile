@@ -1,4 +1,4 @@
-.PHONY: install test lint check baseline analyze-ag-news analyze-longdoc baseline-ag-news baseline-longdoc truncated-ag-news truncated-arxiv chunked-ag-news chunked-arxiv chunked-arxiv-uniform chunked-arxiv-idf summary-arxiv summary-ag-news compare-reports benchmark-quick benchmark-transformers benchmark-full-smoke plots
+.PHONY: install test lint check baseline analyze-ag-news analyze-longdoc baseline-ag-news baseline-longdoc truncated-ag-news truncated-arxiv chunked-ag-news chunked-arxiv chunked-arxiv-uniform chunked-arxiv-idf long-context-arxiv long-context-ag-news summary-arxiv summary-ag-news compare-reports benchmark-quick benchmark-transformers benchmark-full-smoke plots
 
 LONGDOC_DATASET ?= arxiv
 
@@ -44,6 +44,12 @@ chunked-arxiv-uniform:
 
 chunked-arxiv-idf:
 	python -m longdoc_transformer_classifier.training.train_chunked_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 256 --chunk-size 220 --chunk-overlap 40 --max-chunks-per-doc 8 --aggregation mean_proba --chunk-selection idf_top_k
+
+long-context-arxiv:
+	python -m longdoc_transformer_classifier.training.train_long_context_transformer --dataset arxiv --model-name allenai/longformer-base-4096 --max-train-samples 20 --max-test-samples 10 --epochs 1 --batch-size 1 --max-length 1024 --freeze-encoder
+
+long-context-ag-news:
+	python -m longdoc_transformer_classifier.training.train_long_context_transformer --dataset ag_news --model-name allenai/longformer-base-4096 --max-train-samples 20 --max-test-samples 10 --epochs 1 --batch-size 1 --max-length 512 --freeze-encoder
 
 summary-arxiv:
 	python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset arxiv --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 1024 --summary-max-new-tokens 120 --summary-min-new-tokens 30 --summary-num-beams 2 --classifier tfidf

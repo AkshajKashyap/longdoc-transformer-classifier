@@ -103,6 +103,21 @@
       "train_samples": 100
     },
     {
+      "accuracy": 0.1,
+      "dataset": "arxiv",
+      "key_limitation": "Long-context transformers still have a maximum context window.",
+      "key_settings": "model=allenai/longformer-base-4096, max_length=1024, freeze_encoder=True, trainable_params=599051, gradient_accumulation=1",
+      "macro_f1": 0.0202020202020202,
+      "method": "long_context_transformer_arxiv",
+      "method_family": "long_context_transformer",
+      "method_family_label": "Long-context Transformer",
+      "metrics_path": "reports/long_context_transformer_arxiv_metrics.json",
+      "model_name": "allenai/longformer-base-4096",
+      "structural_takeaway": "Uses a transformer architecture designed for longer contexts, avoiding manual chunk aggregation but still bounded by max_length and compute.",
+      "test_samples": 10,
+      "train_samples": 20
+    },
+    {
       "accuracy": 0.2,
       "dataset": "arxiv",
       "key_limitation": "This is not full summarizer fine-tuning.",

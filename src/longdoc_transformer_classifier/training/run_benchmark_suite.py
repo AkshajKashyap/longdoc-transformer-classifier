@@ -10,6 +10,7 @@ from longdoc_transformer_classifier.benchmark_config import (
     DEFAULT_BENCHMARK_DATASET,
     DEFAULT_CHUNK_SELECTION,
     DEFAULT_REPORTS_DIR,
+    LONG_CONTEXT_TRANSFORMER_MODEL,
     QUICK_SAMPLE_CONFIG,
     STANDARD_SAMPLE_CONFIG,
     TINY_TRANSFORMER_MODEL,
@@ -34,6 +35,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dataset", default=DEFAULT_BENCHMARK_DATASET)
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--include-transformers", action="store_true")
+    parser.add_argument("--include-long-context", action="store_true")
     parser.add_argument("--include-summary", action="store_true")
     parser.add_argument(
         "--chunk-selection",
@@ -50,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         dataset=args.dataset,
         quick=args.quick,
         include_transformers=args.include_transformers,
+        include_long_context=args.include_long_context,
         include_summary=args.include_summary,
         output_dir=args.output_dir,
         chunk_selection=args.chunk_selection,
@@ -61,6 +64,7 @@ def build_command_plan(
     dataset: str,
     quick: bool,
     include_transformers: bool,
+    include_long_context: bool,
     include_summary: bool,
     output_dir: Path,
     chunk_selection: str = DEFAULT_CHUNK_SELECTION,
@@ -79,6 +83,9 @@ def build_command_plan(
                 _chunked_transformer_command(dataset, samples, output_dir_text, chunk_selection),
             ]
         )
+
+    if include_long_context:
+        commands.append(_long_context_transformer_command(dataset, samples, output_dir_text))
 
     if include_summary:
         commands.append(_summary_command(dataset, samples, output_dir_text))
@@ -218,6 +225,37 @@ def _chunked_transformer_command(
             output_dir,
         ),
         description="Run a tiny chunked transformer smoke check.",
+    )
+
+
+def _long_context_transformer_command(
+    dataset: str,
+    samples: BenchmarkSampleConfig,
+    output_dir: str,
+) -> BenchmarkCommand:
+    return BenchmarkCommand(
+        name="long-context-transformer-smoke",
+        module="longdoc_transformer_classifier.training.train_long_context_transformer",
+        args=(
+            "--dataset",
+            dataset,
+            "--model-name",
+            LONG_CONTEXT_TRANSFORMER_MODEL,
+            "--max-train-samples",
+            str(samples.long_context_train_samples),
+            "--max-test-samples",
+            str(samples.long_context_test_samples),
+            "--epochs",
+            "1",
+            "--batch-size",
+            "1",
+            "--max-length",
+            "1024" if dataset == "arxiv" else "512",
+            "--freeze-encoder",
+            "--reports-dir",
+            output_dir,
+        ),
+        description="Run a conservative long-context transformer smoke check.",
     )
 
 

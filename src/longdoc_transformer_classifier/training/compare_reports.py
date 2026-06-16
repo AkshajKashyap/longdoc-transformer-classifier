@@ -208,6 +208,14 @@ def summarize_settings(method_name: str, metrics: dict[str, Any]) -> str:
             f"chunk_size={metrics.get('chunk_size', 'n/a')}, "
             f"overlap={metrics.get('chunk_overlap', 'n/a')}"
         )
+    if method_name.startswith("long_context_transformer_"):
+        return (
+            f"model={metrics.get('model_name', 'n/a')}, "
+            f"max_length={metrics.get('max_length', 'n/a')}, "
+            f"freeze_encoder={metrics.get('freeze_encoder', 'n/a')}, "
+            f"trainable_params={metrics.get('trainable_parameter_count', 'n/a')}, "
+            f"gradient_accumulation={metrics.get('gradient_accumulation_steps', 'n/a')}"
+        )
     if method_name.startswith("summary_classifier_"):
         classifier_model = metrics.get("classifier_model") or "n/a"
         return (
@@ -267,13 +275,21 @@ def infer_method_family(method_name: str) -> str:
         return "truncated_transformer"
     if method_name.startswith("chunked_transformer_"):
         return "chunked_transformer"
+    if method_name.startswith("long_context_transformer_"):
+        return "long_context_transformer"
     if method_name.startswith("summary_classifier_"):
         return "summary_classifier"
     return "unknown"
 
 
 def infer_dataset_name(method_name: str) -> str:
-    for prefix in ("baseline_", "truncated_transformer_", "chunked_transformer_", "summary_classifier_"):
+    for prefix in (
+        "baseline_",
+        "truncated_transformer_",
+        "chunked_transformer_",
+        "long_context_transformer_",
+        "summary_classifier_",
+    ):
         if method_name.startswith(prefix):
             return method_name.removeprefix(prefix)
     return "unknown"

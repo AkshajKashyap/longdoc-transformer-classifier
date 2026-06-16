@@ -100,5 +100,29 @@ def test_comparison_report_includes_chunk_selection_in_settings(tmp_path):
     assert "max_chunks_per_doc=8" in row["key_settings"]
 
 
+def test_comparison_report_parses_long_context_transformer_metrics(tmp_path):
+    metrics_path = tmp_path / "long_context_transformer_arxiv_metrics.json"
+    _write_metrics(
+        metrics_path,
+        {
+            "dataset_name": "arxiv",
+            "accuracy": 0.4,
+            "macro_f1": 0.3,
+            "model_name": "allenai/longformer-base-4096",
+            "max_length": 1024,
+            "freeze_encoder": True,
+            "trainable_parameter_count": 123,
+            "gradient_accumulation_steps": 2,
+        },
+    )
+
+    row = parse_metrics_file(metrics_path)
+
+    assert row["method_family"] == "long_context_transformer"
+    assert row["method_family_label"] == "Long-context Transformer"
+    assert "max_length=1024" in row["key_settings"]
+    assert "freeze_encoder=True" in row["key_settings"]
+
+
 def _write_metrics(path, metrics):
     path.write_text(json.dumps(metrics), encoding="utf-8")

@@ -38,6 +38,17 @@ evidence for the label.
 Summarization compresses the document before classification. The summarizer can miss later sections,
 omit rare class evidence, or produce summaries optimized for readability rather than classification.
 
+## Why Add Longformer After Truncation And Chunking
+
+Truncation is the naive fixed-window baseline, and chunking is a manual way to expose more of the
+document. Longformer-style models add the missing architectural comparison: a transformer designed to
+process longer sequences directly.
+
+The tradeoff is cost. Long-context models use more memory and compute, so smoke runs use tiny sample
+sizes, batch size 1, shorter-than-maximum context windows, and sometimes a frozen encoder. TF-IDF can
+still win these smoke runs because it sees the full document vocabulary cheaply and the neural setup has
+little data or adaptation time.
+
 ## Improvements With More Compute
 
 With more compute, the next steps would be larger transformer smoke runs, better chunk selection,

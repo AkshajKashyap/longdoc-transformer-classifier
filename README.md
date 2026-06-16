@@ -9,12 +9,12 @@ The longer-term comparison plan is:
 - truncated transformer baseline
 - chunked transformer baseline
 - summarization-first classifier
-- optional Longformer/BigBird baseline later
+- optional BigBird baseline later
 
 ## Current Status
 
-Milestone 7 consolidates the earlier scripts into a small benchmark project and makes the chunked
-transformer baseline less prefix-biased with chunk selection strategies.
+Milestone 8 adds a conservative long-context transformer baseline on top of the existing benchmark
+project and chunk-selection infrastructure.
 
 The project includes:
 
@@ -23,11 +23,12 @@ The project includes:
 - document length analysis with rough 512-token truncation checks
 - deterministic word chunking utilities
 - chunk selection strategies for capped chunked transformer runs
+- a conservative Longformer-style long-context transformer smoke baseline
 - TF-IDF, truncated transformer, chunked transformer, and summary-first smoke baselines
 - unified comparison reports and matplotlib figures
 - method notes, interview notes, and limitations docs
 
-The repo still does not include FastAPI, Streamlit, monitoring, Longformer, BigBird, or fine-tuned BART.
+The repo still does not include FastAPI, Streamlit, monitoring, BigBird, or fine-tuned BART.
 
 ## Quickstart
 
@@ -59,6 +60,12 @@ Include tiny transformer smoke runs:
 
 ```bash
 make benchmark-transformers
+```
+
+Include a conservative long-context transformer smoke run:
+
+```bash
+python -m longdoc_transformer_classifier.training.run_benchmark_suite --dataset arxiv --quick --include-long-context
 ```
 
 Include tiny transformer and summary-first smoke runs:
@@ -154,6 +161,23 @@ Summary-first smoke run:
 python -m longdoc_transformer_classifier.training.train_summary_classifier --dataset arxiv --max-train-samples 30 --max-test-samples 15 --summarizer-model sshleifer/distilbart-cnn-12-6 --summary-max-input-tokens 1024 --summary-max-new-tokens 120 --summary-min-new-tokens 30 --summary-num-beams 2 --classifier tfidf
 ```
 
+## Long-Context Transformer Baseline
+
+Longformer-style models are different from truncation because the architecture is designed for longer
+input windows. They are also different from chunking because the model receives one longer tokenized
+document directly rather than separate chunk predictions that must be aggregated.
+
+The smoke baseline is intentionally conservative:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_long_context_transformer --dataset arxiv --model-name allenai/longformer-base-4096 --max-train-samples 20 --max-test-samples 10 --epochs 1 --batch-size 1 --max-length 1024 --freeze-encoder
+```
+
+Use `batch-size 1` and modest `max_length` values unless you know your GPU memory budget. A
+`max_length=1024` smoke run does not use Longformer's full 4096-token capacity, and `--freeze-encoder`
+limits adaptation. These runs exist to benchmark the missing architectural family, not to claim final
+performance.
+
 ## Current Best Result
 
 In the current smoke reports, TF-IDF + Logistic Regression is the strongest method on both AG News and
@@ -214,5 +238,5 @@ make chunked-arxiv-idf
 ## What Comes Next
 
 Future milestones can add stronger summary models, better chunk selection, hierarchical aggregation,
-and eventually true long-context transformer baselines. Each should reuse the same data, chunking,
-metrics, comparison, and plotting foundations.
+hierarchical aggregation, larger long-context runs, and eventually BigBird baselines. Each should reuse
+the same data, chunking, metrics, comparison, and plotting foundations.

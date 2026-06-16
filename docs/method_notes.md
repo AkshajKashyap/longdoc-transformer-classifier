@@ -43,9 +43,21 @@ The summary-first classifier compresses documents before classification. It prov
 cache generated summaries and compare a compression strategy against truncation and chunking. It can
 fail when the summarizer sees only the front portion of a document or removes label evidence.
 
+## Long-Context Transformer Baseline
+
+The long-context transformer baseline uses `AutoModelForSequenceClassification` with a model such as
+`allenai/longformer-base-4096`. For Longformer models, the first token receives global attention and the
+document is classified directly without manual chunk aggregation.
+
+This method proves what changes when the architecture itself supports longer windows. It is still
+bounded by `max_length`, memory, and compute. The default smoke settings use `max_length=1024`,
+`batch-size=1`, and optional encoder freezing to keep local runs practical.
+
 ## What Each Method Proves
 
 - TF-IDF proves the classical lexical floor and reporting pipeline.
 - Truncation proves how much evidence a fixed-window transformer discards.
 - Chunking proves the project can structurally process more of each document.
 - Summary-first proves compression can be benchmarked without changing the evaluation contract.
+- Long-context transformers prove the benchmark can compare architectures designed for longer input
+  windows.
