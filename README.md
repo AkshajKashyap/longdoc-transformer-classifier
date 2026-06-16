@@ -97,9 +97,34 @@ Length reports are saved as:
 
 Most standard transformer classifiers can only read a fixed-size window. For long documents, a later model will need to split each document into chunks, classify or encode those chunks, and aggregate evidence back to the original document. This milestone adds deterministic word chunking with configurable chunk size and overlap so that later transformer experiments can share one tested chunking foundation.
 
+## Truncated Transformer Baseline
+
+Milestone 3 adds a deliberately naive transformer baseline: tokenize each raw document once, truncate to `max_length`, and train a standard sequence classifier on only that prefix. This is not a long-document solution. It matters because it gives the later chunking and summarization milestones a fair comparison against the simplest transformer approach.
+
+Use `prajjwal1/bert-tiny` for quick CPU smoke runs:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_truncated_transformer --dataset ag_news --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 8 --max-length 128
+```
+
+```bash
+python -m longdoc_transformer_classifier.training.train_truncated_transformer --dataset arxiv --model-name prajjwal1/bert-tiny --max-train-samples 100 --max-test-samples 50 --epochs 1 --batch-size 4 --max-length 512
+```
+
+`distilbert-base-uncased` is the default and a more realistic baseline model once you are ready for a slower run:
+
+```bash
+python -m longdoc_transformer_classifier.training.train_truncated_transformer --dataset arxiv --model-name distilbert-base-uncased --max-train-samples 1000 --max-test-samples 500 --epochs 1 --batch-size 8 --max-length 512
+```
+
+The truncated transformer reports are saved as:
+
+- `reports/truncated_transformer_{dataset_name}.md`
+- `reports/truncated_transformer_{dataset_name}_metrics.json`
+
 ## What This Baseline Proves
 
-The first two milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train a simple classifier, compute comparable metrics, chunk long documents, and save reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
+The first three milestones prove that the project can load short and long text classification datasets, measure document lengths, create reproducible features, train classical and truncated-transformer baselines, compute comparable metrics, chunk long documents, and save reports. That gives future transformer experiments a real benchmark instead of a vibes-only comparison.
 
 ## What Comes Next
 

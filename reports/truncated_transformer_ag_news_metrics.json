@@ -1,0 +1,73 @@
+{
+  "accuracy": 0.28,
+  "batch_size": 8,
+  "confusion_matrix": [
+    [
+      0,
+      3,
+      10,
+      0
+    ],
+    [
+      0,
+      6,
+      7,
+      0
+    ],
+    [
+      0,
+      6,
+      4,
+      2
+    ],
+    [
+      0,
+      3,
+      5,
+      4
+    ]
+  ],
+  "dataset_name": "ag_news",
+  "device": "cpu",
+  "epochs": 1,
+  "hf_path": "fancyzhx/ag_news",
+  "label_field": "label",
+  "label_names": [
+    "World",
+    "Sports",
+    "Business",
+    "Sci/Tech"
+  ],
+  "labels": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "learning_rate": 5e-05,
+  "macro_f1": 0.26051688360686664,
+  "max_length": 128,
+  "max_test_samples": 50,
+  "max_train_samples": 100,
+  "model_name": "prajjwal1/bert-tiny",
+  "per_class_f1": {
+    "Business": 0.21052631578947367,
+    "Sci/Tech": 0.4444444444444444,
+    "Sports": 0.3870967741935484,
+    "World": 0.0
+  },
+  "random_state": 42,
+  "test_size": 50,
+  "text_field": "text",
+  "train_size": 100,
+  "truncation_diagnostics": {
+    "document_count": 50,
+    "documents_above_max_length": 1,
+    "max_length": 128,
+    "mean_whitespace_tokens": 47.3,
+    "median_whitespace_tokens": 44.0,
+    "p95_whitespace_tokens": 88.1499999999999,
+    "percent_above_max_length": 2.0
+  },
+  "truncation_note": "This is a truncation baseline: each document is tokenized once and only the first max_length tokens are available to the classifier."
+}
